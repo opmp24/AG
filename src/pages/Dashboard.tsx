@@ -229,7 +229,7 @@ const Dashboard: React.FC = () => {
                                 <PieIcon size={18} color="var(--primary)" opacity={0.5} />
                             </div>
                         </div>
-                    ) : <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textAlign: 'center', pt: '2rem' }}>Sin datos</p>}
+                    ) : <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textAlign: 'center', paddingTop: '2rem' }}>Sin datos</p>}
                 </div>
 
                 {/* NEW PROJECTION CHART */}

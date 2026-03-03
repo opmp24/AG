@@ -110,27 +110,27 @@ const Profile: React.FC = () => {
                             <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
                                 <div style={{ background: 'var(--primary)', padding: '0.8rem', borderRadius: '15px' }}><Shield color="white" size={24} /></div>
                                 <div>
-                                    <h3 style={{ fontWeight: 900, mb: '0.3rem' }}>Privacidad Total</h3>
+                                    <h3 style={{ fontWeight: 900, marginBottom: '0.3rem' }}>Privacidad Total</h3>
                                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Tus datos no salen de este dispositivo. Usamos Google solo para que tu sesión sea única y segura.</p>
                                 </div>
                             </div>
                             <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
                                 <div style={{ background: '#ec4899', padding: '0.8rem', borderRadius: '15px' }}><PieChart color="white" size={24} /></div>
                                 <div>
-                                    <h3 style={{ fontWeight: 900, mb: '0.3rem' }}>Control Maestro</h3>
+                                    <h3 style={{ fontWeight: 900, marginBottom: '0.3rem' }}>Control Maestro</h3>
                                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Categorías personalizables, gráficos históricos y presupuestos mensuales inteligentes.</p>
                                 </div>
                             </div>
                             <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
                                 <div style={{ background: '#f59e0b', padding: '0.8rem', borderRadius: '15px' }}><Smartphone color="white" size={24} /></div>
                                 <div>
-                                    <h3 style={{ fontWeight: 900, mb: '0.3rem' }}>App Instalable</h3>
+                                    <h3 style={{ fontWeight: 900, marginBottom: '0.3rem' }}>App Instalable</h3>
                                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Lleva HogarSafe en tu pantalla de inicio como una App real, sin ocupar espacio de memoria.</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div style={{ marginTop: '3rem', pt: '2rem', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+                        <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
                             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', fontWeight: 700 }}>EMPEZAR AHORA</p>
                             <div style={{ display: 'flex', justifyContent: 'center' }}>
                                 <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => { }} useOneTap={false} theme="filled_blue" shape="pill" size="large" />
