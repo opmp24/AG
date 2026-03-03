@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Save, X, Calendar, Tag, AlignLeft } from 'lucide-react';
+import { ChevronLeft, Save, X, Calendar, Tag, AlignLeft, CreditCard, Banknote, Landmark } from 'lucide-react';
 import { saveExpense, getExpenseById, getCategories } from '../lib/db';
 import { useApp } from '../context/AppContext';
 import { v4 as uuidv4 } from 'uuid';
@@ -15,6 +15,12 @@ const DEFAULT_CATEGORIES = [
     { id: '6', name: 'Otros', icon: '📦', color: '#6366f1' },
 ];
 
+const PAYMENT_METHODS = [
+    { id: 'efectivo', name: 'Efectivo', icon: Banknote, color: '#10b981' },
+    { id: 'tarjeta', name: 'Tarjeta', icon: CreditCard, color: '#3b82f6' },
+    { id: 'transferencia', name: 'Transfer', icon: Landmark, color: '#6366f1' },
+];
+
 const ExpenseForm: React.FC = () => {
     const navigate = useNavigate();
     const { id } = useParams();
@@ -23,13 +29,13 @@ const ExpenseForm: React.FC = () => {
     const [amount, setAmount] = useState('');
     const [description, setDescription] = useState('');
     const [categoryId, setCategoryId] = useState('1');
+    const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'tarjeta' | 'transferencia'>('efectivo');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [isSaving, setIsSaving] = useState(false);
     const [categories, setCategories] = useState<Category[]>([]);
 
     useEffect(() => {
         async function fetchData() {
-            // Cargar categorías personalizadas
             const dbCategories = await getCategories();
             if (dbCategories.length > 0) {
                 setCategories(dbCategories);
@@ -37,14 +43,17 @@ const ExpenseForm: React.FC = () => {
                 setCategories(DEFAULT_CATEGORIES as Category[]);
             }
 
-            // Cargar gasto si estamos editando
             if (id) {
                 const expense = await getExpenseById(id as string);
                 if (expense) {
                     setAmount(expense.amount.toString());
                     setDescription(expense.description);
                     setCategoryId(expense.categoryId);
-                    setDate(new Date(expense.date).toISOString().split('T')[0]);
+                    setPaymentMethod(expense.paymentMethod || 'efectivo');
+                    // Asegurar que la fecha se visualice correctamente en el input date (YYYY-MM-DD)
+                    const d = new Date(expense.date);
+                    const formattedDate = d.toISOString().split('T')[0];
+                    setDate(formattedDate);
                 }
             }
         }
@@ -56,13 +65,24 @@ const ExpenseForm: React.FC = () => {
         if (!amount || !description) return;
 
         setIsSaving(true);
+        // Ajustar la fecha para que use la hora actual si es el mismo día, 
+        // para evitar problemas de desfase horario en el cálculo de "Hoy"
+        const selectedDate = new Date(date);
+        const now = new Date();
+        if (selectedDate.toDateString() === now.toDateString()) {
+            selectedDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+        } else {
+            selectedDate.setHours(12, 0, 0); // Mediodía para evitar saltos de zona horaria
+        }
+
         const expenseData = {
             id: id || uuidv4(),
             amount: Number(amount),
             currency: preferences.currency,
             description,
             categoryId,
-            date: new Date(date).getTime(),
+            paymentMethod,
+            date: selectedDate.getTime(),
             updatedAt: Date.now(),
             createdAt: Date.now(),
             source: 'manual' as const
@@ -144,6 +164,36 @@ const ExpenseForm: React.FC = () => {
                             onChange={(e) => setDate(e.target.value)}
                             required
                         />
+                    </div>
+
+                    {/* Método de Pago */}
+                    <div>
+                        <label className="form-label">Método de Pago</label>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+                            {PAYMENT_METHODS.map(m => (
+                                <button
+                                    key={m.id}
+                                    type="button"
+                                    onClick={() => setPaymentMethod(m.id as any)}
+                                    className={`premium-card ${paymentMethod === m.id ? 'active' : ''}`}
+                                    style={{
+                                        padding: '0.8rem 0.5rem',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        cursor: 'pointer',
+                                        background: paymentMethod === m.id ? m.color : 'rgba(255,255,255,0.03)',
+                                        border: paymentMethod === m.id ? '2px solid white' : '1px solid var(--glass-border)',
+                                        transition: 'all 0.2s ease',
+                                        opacity: paymentMethod === m.id ? 1 : 0.7
+                                    }}
+                                >
+                                    <m.icon size={20} />
+                                    <span style={{ fontSize: '0.7rem', fontWeight: 700 }}>{m.name}</span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
                     <div>

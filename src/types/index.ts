@@ -30,6 +30,7 @@ export interface Expense {
     createdAt: number;
     updatedAt: number;
     source: 'manual' | 'notification';
+    paymentMethod?: 'efectivo' | 'tarjeta' | 'transferencia';
     merchant?: string;
     notes?: string;
     tags?: string[];

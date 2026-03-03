@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getAllExpenses, deleteExpense } from '../lib/db';
 import type { Expense } from '../types';
-import { Trash2, Calendar, ShoppingBag, ChevronLeft, Edit3 } from 'lucide-react';
+import { Trash2, Calendar, ShoppingBag, ChevronLeft, Edit3, CreditCard, Banknote, Landmark } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -12,6 +12,12 @@ const CATEGORY_MAP: Record<string, { icon: string, color: string, name: string }
     '4': { name: 'Ocio', icon: '🍿', color: '#f59e0b' },
     '5': { name: 'Salud', icon: '⚕️', color: '#ec4899' },
     '6': { name: 'Otros', icon: '📦', color: '#6366f1' },
+};
+
+const PAYMENT_ICON: Record<string, any> = {
+    'efectivo': Banknote,
+    'tarjeta': CreditCard,
+    'transferencia': Landmark
 };
 
 const History: React.FC = () => {
@@ -88,6 +94,8 @@ const History: React.FC = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
                     {expenses.map((exp, idx) => {
                         const category = CATEGORY_MAP[exp.categoryId] || CATEGORY_MAP['6'];
+                        const PayIcon = PAYMENT_ICON[exp.paymentMethod || 'efectivo'];
+
                         return (
                             <div
                                 key={exp.id}
@@ -116,12 +124,13 @@ const History: React.FC = () => {
                                         {category.icon}
                                     </div>
                                     <div>
-                                        <p style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.01em' }}>{exp.description}</p>
+                                        <p style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.01em' }}>{exp.description}</p>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '0.2rem', fontWeight: 600 }}>
                                             <Calendar size={12} />
                                             <span>{formatDate(exp.date)}</span>
                                             <span style={{ opacity: 0.3 }}>•</span>
-                                            <span style={{ color: category.color }}>{category.name}</span>
+                                            {PayIcon && <PayIcon size={12} />}
+                                            <span style={{ textTransform: 'capitalize' }}>{exp.paymentMethod || 'efectivo'}</span>
                                         </div>
                                     </div>
                                 </div>

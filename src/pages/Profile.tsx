@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogOut, Shield, Download, Upload, CreditCard, CheckCircle2, User as UserIcon } from 'lucide-react';
+import { LogOut, Shield, Download, Upload, CreditCard, CheckCircle2, User as UserIcon, Lock, Database, Globe, Smartphone, Heart } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
@@ -34,34 +34,96 @@ const Profile: React.FC = () => {
     };
 
     return (
-        <div className="animate-slide-up" style={{ padding: '1.5rem', paddingBottom: '3rem' }}>
+        <div className="animate-slide-up" style={{ padding: '1.5rem', paddingBottom: '3rem', maxWidth: '800px', margin: '0 auto' }}>
             <header style={{ marginBottom: '2.5rem' }}>
-                <h1 className="gradient-text" style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.03em' }}>Ajustes</h1>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', fontWeight: 500 }}>Configura tu cuenta HogarSafe</p>
+                <h1 className="gradient-text" style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.03em' }}>
+                    {isAuthenticated ? 'Ajustes' : 'Bienvenido a HogarSafe'}
+                </h1>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', fontWeight: 600 }}>
+                    {isAuthenticated ? 'Configura tu cuenta y preferencias' : 'La app de finanzas que respeta tu privacidad'}
+                </p>
             </header>
 
             {!isAuthenticated ? (
-                <div className="premium-card animate-fade-in" style={{ textAlign: 'center', padding: '4rem 2rem', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(15, 17, 26, 1) 100%)', border: '2px solid var(--primary)' }}>
-                    <div style={{ width: '90px', height: '90px', background: 'var(--primary)', borderRadius: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2.5rem', boxShadow: '0 10px 25px rgba(99, 102, 241, 0.4)' }}>
-                        <Shield size={45} color="white" />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    {/* Hero Landing Section */}
+                    <div className="premium-card animate-fade-in" style={{ textAlign: 'center', padding: '3.5rem 2rem', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(15, 17, 26, 1) 100%)', border: '2px solid var(--primary)', borderRadius: '35px' }}>
+                        <div style={{ width: '90px', height: '90px', background: 'var(--primary)', borderRadius: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2.5rem', boxShadow: '0 15px 35px rgba(99, 102, 241, 0.5)' }}>
+                            <Shield size={45} color="white" />
+                        </div>
+                        <h2 style={{ fontSize: '2.2rem', fontWeight: 900, marginBottom: '1.2rem', lineHeight: '1.1' }}>Control Total, <span className="gradient-text">Privacidad Real</span></h2>
+                        <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', lineHeight: '1.6', fontSize: '1.1rem', maxWidth: '400px', margin: '0 auto 3rem' }}>
+                            HogarSafe guarda tus datos financieros **exclusivamente** en tu dispositivo. No hay servidores, no hay nubes, solo tú y tu dinero.
+                        </p>
+
+                        <div style={{ display: 'flex', justifyContent: 'center', filter: 'drop-shadow(0 12px 25px rgba(99, 102, 241, 0.4))' }}>
+                            <GoogleLogin
+                                onSuccess={handleGoogleSuccess}
+                                onError={() => console.log('Login Failed')}
+                                useOneTap={false}
+                                theme="filled_blue"
+                                shape="pill"
+                                size="large"
+                                text="continue_with"
+                            />
+                        </div>
+                        <p style={{ marginTop: '2rem', fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                            Usamos Google solo para identificar tu perfil y avatar.
+                        </p>
                     </div>
-                    <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '1.2rem' }}>Autenticación Requerida</h2>
-                    <p style={{ color: 'var(--text-secondary)', marginBottom: '3rem', lineHeight: '1.7', fontSize: '1.05rem' }}>
-                        Inicia sesión con Google para sincronizar tus preferencias.
-                        <br />
-                        <span style={{ color: 'var(--primary)', fontWeight: 700 }}>Tus datos financieros nunca salen de este móvil.</span>
+
+                    {/* Features Grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.2rem' }}>
+                        <div className="premium-card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
+                            <div style={{ padding: '0.8rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '15px' }}>
+                                <Lock size={24} color="var(--success)" />
+                            </div>
+                            <div>
+                                <h4 style={{ fontWeight: 800 }}>Cifrado Bancario Local</h4>
+                                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Tus gastos se guardan con AES-GCM directamente en tu navegador.</p>
+                            </div>
+                        </div>
+                        <div className="premium-card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
+                            <div style={{ padding: '0.8rem', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '15px' }}>
+                                <Smartphone size={24} color="var(--primary)" />
+                            </div>
+                            <div>
+                                <h4 style={{ fontWeight: 800 }}>Instalable como App</h4>
+                                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Llévala en tu pantalla de inicio sin ocupar espacio innecesario.</p>
+                            </div>
+                        </div>
+                        <div className="premium-card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
+                            <div style={{ padding: '0.8rem', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '15px' }}>
+                                <Globe size={24} color="var(--warning)" />
+                            </div>
+                            <div>
+                                <h4 style={{ fontWeight: 800 }}>Funciona Sin Internet</h4>
+                                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Registra y edita tus movimientos incluso estando desconectado.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Instructions Section */}
+                    <div className="premium-card" style={{ padding: '2rem' }}>
+                        <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <Smartphone size={20} color="var(--primary)" /> ¿Cómo instalar en mi móvil?
+                        </h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1.2rem', borderRadius: '15px', border: '1px solid var(--glass-border)' }}>
+                                <p style={{ fontWeight: 800, color: 'var(--primary)', marginBottom: '0.4rem' }}>Android (Chrome)</p>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Pulsa en los **3 puntos (⋮)** y selecciona **"Instalar aplicación"**.</p>
+                            </div>
+                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1.2rem', borderRadius: '15px', border: '1px solid var(--glass-border)' }}>
+                                <p style={{ fontWeight: 800, color: '#ff6b6b', marginBottom: '0.4rem' }}>iPhone (Safari)</p>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Pulsa el botón **Compartir (↑)** y elige **"Añadir a la pantalla de inicio"**.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p style={{ textAlign: 'center', padding: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                        <Heart size={14} color="#ff4d4d" style={{ marginRight: '5px' }} />
+                        Creado para el control financiero inteligente del hogar.
                     </p>
-                    <div style={{ display: 'flex', justifyContent: 'center', filter: 'drop-shadow(0 12px 20px rgba(99, 102, 241, 0.3))' }}>
-                        <GoogleLogin
-                            onSuccess={handleGoogleSuccess}
-                            onError={() => console.log('Login Failed')}
-                            useOneTap={false}
-                            theme="filled_blue"
-                            shape="pill"
-                            size="large"
-                            text="signin_with"
-                        />
-                    </div>
                 </div>
             ) : (
                 <div className="profile-container" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -190,7 +252,7 @@ const Profile: React.FC = () => {
                     </button>
 
                     <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600, marginTop: '1rem', opacity: 0.7 }}>
-                        HogarSafe v1.1.0 • Cifrado Local AES-GCM 256-bit
+                        HogarSafe v1.3.0 • Cifrado Local AES-GCM 256-bit
                     </p>
                 </div>
             )}
