@@ -2,6 +2,9 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, NavLink } from 'react-router-dom';
 import { LayoutDashboard, Plus, List, Settings, PieChart } from 'lucide-react';
 import { AppProvider, useApp } from './context/AppContext';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+
+const GOOGLE_CLIENT_ID = "638686695286-9m8l6q3d8ge3jbg9u9ge9v1ge9v1ge9v.apps.googleusercontent.com";
 
 // Lazy loading para optimizar rendimiento de PWA
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -71,11 +74,13 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
     return (
-        <AppProvider>
-            <Router>
-                <AppContent />
-            </Router>
-        </AppProvider>
+        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+            <AppProvider>
+                <Router>
+                    <AppContent />
+                </Router>
+            </AppProvider>
+        </GoogleOAuthProvider>
     );
 };
 

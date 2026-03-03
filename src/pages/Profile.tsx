@@ -1,19 +1,22 @@
 import React from 'react';
-import { User, LogOut, Shield, Download, Upload, Moon, Sun } from 'lucide-react';
+import { LogOut, Shield, Download, Upload } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { GoogleLogin } from '@react-oauth/google';
+import { jwtDecode } from 'jwt-decode';
 
 const Profile: React.FC = () => {
     const { user, login, logout, isAuthenticated, preferences, updatePreferences } = useApp();
 
-    // Simulación de Google Login para propósitos de demostración
-    // En producción se usaría @react-oauth/google
-    const handleMockLogin = () => {
-        login({
-            id: 'google_123',
-            email: 'usuario@ejemplo.com',
-            name: 'Usuario HogarSafe',
-            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lucky'
-        });
+    const handleGoogleSuccess = (credentialResponse: any) => {
+        if (credentialResponse.credential) {
+            const decoded: any = jwtDecode(credentialResponse.credential);
+            login({
+                id: decoded.sub,
+                email: decoded.email,
+                name: decoded.name,
+                avatar: decoded.picture
+            });
+        }
     };
 
     return (
@@ -28,9 +31,15 @@ const Profile: React.FC = () => {
                         Tu privacidad es nuestra prioridad. Identifícate para sincronizar tus preferencias.
                         Tus datos financieros nunca saldrán de este dispositivo.
                     </p>
-                    <button className="btn-primary" onClick={handleMockLogin} style={{ width: '100%' }}>
-                        Continuar con Google
-                    </button>
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <GoogleLogin
+                            onSuccess={handleGoogleSuccess}
+                            onError={() => console.log('Login Failed')}
+                            useOneTap
+                            theme="filled_blue"
+                            shape="pill"
+                        />
+                    </div>
                 </div>
             ) : (
                 <>
