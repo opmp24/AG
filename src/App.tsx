@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Plus, List, Settings, PieChart } from 'lucide-react';
+import { LayoutDashboard, Plus, List, Settings, PieChart, CalendarCheck } from 'lucide-react';
 import { AppProvider, useApp } from './context/AppContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
@@ -12,6 +12,7 @@ const ExpenseForm = lazy(() => import('./pages/ExpenseForm'));
 const History = lazy(() => import('./pages/History'));
 const Categories = lazy(() => import('./pages/Categories'));
 const Profile = lazy(() => import('./pages/Profile'));
+const Scheduled = lazy(() => import('./pages/Scheduled'));
 
 const AppContent: React.FC = () => {
     const { isAuthenticated } = useApp();
@@ -36,6 +37,7 @@ const AppContent: React.FC = () => {
                         <Route path="/add" element={<ExpenseForm />} />
                         <Route path="/edit/:id" element={<ExpenseForm />} />
                         <Route path="/history" element={<History />} />
+                        <Route path="/scheduled" element={<Scheduled />} />
                         <Route path="/categories" element={<Categories />} />
                         <Route path="/settings" element={<Profile />} />
                         <Route path="*" element={<Navigate to="/" />} />
@@ -59,9 +61,9 @@ const AppContent: React.FC = () => {
                     </NavLink>
                 </div>
 
-                <NavLink to="/categories" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <PieChart size={24} />
-                    <span>Categorías</span>
+                <NavLink to="/scheduled" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                    <CalendarCheck size={24} />
+                    <span>Compromisos</span>
                 </NavLink>
                 <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                     <Settings size={24} />

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { TrendingUp, Wallet, Bell, PieChart as PieIcon, Sparkles, ChevronRight, BarChart3, ChevronLeft, Calendar, LayoutGrid } from 'lucide-react';
-import { getAllExpenses } from '../lib/db';
-import type { Expense } from '../types';
+import { TrendingUp, Wallet, Bell, PieChart as PieIcon, Sparkles, ChevronRight, BarChart3, ChevronLeft, Calendar, LayoutGrid, AlertCircle, Clock } from 'lucide-react';
+import { getAllExpenses, getAllScheduledExpenses } from '../lib/db';
+import type { Expense, ScheduledExpense } from '../types';
 import { useApp } from '../context/AppContext';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -27,19 +27,25 @@ const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
 
-    // Period state (now using offset of periods)
+    // Period state
     const [periodOffset, setPeriodOffset] = useState(0);
     const [currentMonthExpenses, setCurrentMonthExpenses] = useState<Expense[]>([]);
-    const [allExpenses, setAllExpenses] = useState<Expense[]>([]);
     const [comparisonData, setComparisonData] = useState<{ labels: string[], totals: number[] }>({ labels: [], totals: [] });
     const [periodRange, setPeriodRange] = useState({ start: 0, end: 0 });
+
+    // Pending State
+    const [pendingTotal, setPendingTotal] = useState(0);
+    const [pendingCount, setPendingCount] = useState(0);
 
     const loadData = async () => {
         try {
             const expenses = await getAllExpenses();
-            setAllExpenses(expenses);
+            const scheduled = await getAllScheduledExpenses();
 
-            // Calcular el rango del período basado en el offset y el día de inicio
+            // Pending summary
+            setPendingCount(scheduled.length);
+            setPendingTotal(scheduled.reduce((sum, i) => sum + i.amount, 0));
+
             const now = new Date();
             const referenceDate = new Date(now.getFullYear(), now.getMonth() + periodOffset, now.getDate());
             const range = getBillingPeriodRange(referenceDate, preferences.billingCycleStartDay || 1);
@@ -48,22 +54,16 @@ const Dashboard: React.FC = () => {
             const monthExpenses = expenses.filter(e => e.date >= range.start && e.date <= range.end);
             setCurrentMonthExpenses(monthExpenses);
 
-            // Comparación de los últimos 6 períodos de facturación
+            // History chart
             const periodTotals: number[] = [];
             const labels: string[] = [];
-
             for (let i = 5; i >= 0; i--) {
                 const pastRefDate = new Date(now.getFullYear(), now.getMonth() - i + periodOffset, now.getDate());
                 const pastRange = getBillingPeriodRange(pastRefDate, preferences.billingCycleStartDay || 1);
-
-                const total = expenses
-                    .filter(e => e.date >= pastRange.start && e.date <= pastRange.end)
-                    .reduce((sum, e) => sum + e.amount, 0);
-
+                const total = expenses.filter(e => e.date >= pastRange.start && e.date <= pastRange.end).reduce((sum, e) => sum + e.amount, 0);
                 periodTotals.push(total);
                 labels.push(new Date(pastRange.start).toLocaleDateString('es-ES', { month: 'short' }));
             }
-
             setComparisonData({ labels, totals: periodTotals });
 
         } catch (err) {
@@ -85,12 +85,7 @@ const Dashboard: React.FC = () => {
 
     const categoryBreakdown = Object.entries(breakdownMap).map(([id, amount]) => {
         const catInfo = CATEGORY_MAP[id] || { name: 'Otro', icon: '📦', color: '#6366f1' };
-        return {
-            name: catInfo.name,
-            color: catInfo.color,
-            total: amount,
-            percent: totalSpentThisMonth > 0 ? (amount / totalSpentThisMonth) * 100 : 0
-        };
+        return { name: catInfo.name, color: catInfo.color, total: amount, percent: totalSpentThisMonth > 0 ? (amount / totalSpentThisMonth) * 100 : 0 };
     }).sort((a, b) => b.total - a.total);
 
     const formatCurrency = (amount: number) => {
@@ -103,23 +98,16 @@ const Dashboard: React.FC = () => {
     const handleSmartPaste = async () => {
         try {
             const text = await navigator.clipboard.readText();
-            if (!text) return alert('¡Copia la notificación primero!');
             const data = parseBankNotification(text);
             if (data && data.amount > 0) {
                 navigate(`/add?amount=${data.amount}&merchant=${encodeURIComponent(data.merchant)}&source=notification`);
-            } else {
-                alert('No se detectó el monto. Copia el mensaje completo del banco.');
-            }
-        } catch (err) { alert('Habilita el permiso de pegado en tu navegador.'); }
+            } else { alert('No se detectó el monto.'); }
+        } catch (err) { alert('Habilita el pegado.'); }
     };
 
     const pieData = {
         labels: categoryBreakdown.map(c => c.name),
-        datasets: [{
-            data: categoryBreakdown.map(c => c.total),
-            backgroundColor: categoryBreakdown.map(c => c.color),
-            borderWidth: 0, hoverOffset: 4
-        }]
+        datasets: [{ data: categoryBreakdown.map(c => c.total), backgroundColor: categoryBreakdown.map(c => c.color), borderWidth: 0 }]
     };
 
     const barData = {
@@ -128,125 +116,111 @@ const Dashboard: React.FC = () => {
             label: 'Gastos',
             data: comparisonData.totals,
             backgroundColor: comparisonData.totals.map((v, i) => i === 5 ? 'var(--primary)' : 'rgba(99, 102, 241, 0.3)'),
-            borderRadius: 8,
-            borderSkipped: false,
+            borderRadius: 8
         }]
     };
 
-    if (loading) return (
-        <div style={{ display: 'flex', height: '80vh', alignItems: 'center', justifyContent: 'center' }}>
-            <div className="spinner" style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-        </div>
-    );
+    if (loading) return <div style={{ display: 'flex', height: '80vh', alignItems: 'center', justifyContent: 'center' }}><div className="spinner"></div></div>;
 
     return (
         <div className="animate-slide-up" style={{ padding: '1.5rem', maxWidth: '600px', margin: '0 auto', paddingBottom: '4rem' }}>
-            {/* Header con Ciclo de Facturación */}
+            {/* Header */}
             <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <img src={user?.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=HogarSafe"} style={{ width: '45px', height: '45px', borderRadius: '15px', border: '2px solid var(--primary)' }} />
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Cierre el día {preferences.billingCycleStartDay}</span>
+                    <div>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 800 }}>Día de Cierre: {preferences.billingCycleStartDay}</span>
                         <h1 style={{ fontSize: '1rem', fontWeight: 900 }}>{formatPeriodName(periodRange.start, periodRange.end)}</h1>
                     </div>
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button onClick={() => setPeriodOffset(periodOffset - 1)} style={{ background: 'var(--glass)', border: 'none', padding: '0.5rem', borderRadius: '10px', color: 'white' }}><ChevronLeft size={20} /></button>
-                    <button onClick={() => setPeriodOffset(periodOffset + 1)} style={{ background: 'var(--glass)', border: 'none', padding: '0.5rem', borderRadius: '10px', color: 'white' }}><ChevronRight size={20} /></button>
+                <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    <button onClick={() => setPeriodOffset(periodOffset - 1)} className="btn-glass" style={{ padding: '0.4rem' }}><ChevronLeft size={18} /></button>
+                    <button onClick={() => setPeriodOffset(periodOffset + 1)} className="btn-glass" style={{ padding: '0.4rem' }}><ChevronRight size={18} /></button>
                 </div>
             </header>
 
-            {/* Smart Magic Bar */}
-            <div className="premium-card clickable" onClick={handleSmartPaste} style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', border: '1px solid var(--primary)', background: 'rgba(99, 102, 241, 0.05)' }}>
-                <div style={{ background: 'var(--primary)', padding: '0.6rem', borderRadius: '10px' }}><Sparkles size={18} color="white" /></div>
-                <div style={{ flex: 1 }}>
-                    <h4 style={{ fontSize: '0.85rem', fontWeight: 800 }}>Detección de Portapapeles</h4>
-                    <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Haz pegado mágico de un gasto copiado</p>
-                </div>
-                <ChevronRight size={16} color="var(--primary)" />
+            {/* Smart Paste Bar */}
+            <div className="premium-card clickable" onClick={handleSmartPaste} style={{ marginBottom: '1.2rem', padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.8rem', border: '1px solid var(--primary)', background: 'rgba(99, 102, 241, 0.05)' }}>
+                <Sparkles size={18} color="var(--primary)" />
+                <span style={{ flex: 1, fontSize: '0.8rem', fontWeight: 800 }}>Pegado Mágico de Notificación</span>
+                <ChevronRight size={14} color="var(--primary)" />
             </div>
 
-            {/* Balance Card */}
-            <div className="premium-card gradient-bg" style={{ borderRadius: '25px', padding: '2rem', color: 'white', marginBottom: '1.5rem', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'relative', zIndex: 1 }}>
-                    <p style={{ opacity: 0.8, fontWeight: 600 }}>Gasto en este Período</p>
-                    <h2 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.04em' }}>{formatCurrency(totalSpentThisMonth)}</h2>
-                    <div style={{ marginTop: '1.5rem', background: 'rgba(255,255,255,0.15)', height: '8px', borderRadius: '10px' }}>
-                        <div style={{ width: `${Math.min(budgetUsedPercent, 100)}%`, height: '100%', background: budgetUsedPercent > 90 ? '#ff6b6b' : 'white', borderRadius: '10px', transition: 'width 0.5s ease' }}></div>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.8rem', fontSize: '0.8rem', fontWeight: 700 }}>
-                        <span>Límite: {formatCurrency(preferences.monthlyBudget)}</span>
-                        <span>{Math.round(budgetUsedPercent)}%</span>
-                    </div>
+            {/* Main Balance */}
+            <div className="premium-card gradient-bg" style={{ padding: '2rem', color: 'white', marginBottom: '1.5rem', borderRadius: '25px' }}>
+                <p style={{ opacity: 0.8, fontWeight: 700, fontSize: '0.85rem' }}>Gastado este Ciclo</p>
+                <h2 style={{ fontSize: '2.4rem', fontWeight: 900, marginBottom: '1rem' }}>{formatCurrency(totalSpentThisMonth)}</h2>
+                <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.2)', borderRadius: '10px' }}>
+                    <div style={{ width: `${Math.min(budgetUsedPercent, 100)}%`, height: '100%', background: budgetUsedPercent > 90 ? '#ff6b6b' : 'white', borderRadius: '10px' }}></div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.6rem', fontSize: '0.75rem', fontWeight: 800 }}>
+                    <span>Presupuesto: {formatCurrency(preferences.monthlyBudget)}</span>
+                    <span>{Math.round(budgetUsedPercent)}%</span>
                 </div>
             </div>
 
-            {/* Dos Gráficos */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-                {/* 1. Distribución Categorías */}
-                <div className="premium-card" style={{ padding: '1.5rem' }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}><PieIcon size={18} color="var(--primary)" /> Gastos por Categoría</h3>
-                    {totalSpentThisMonth === 0 ? (
-                        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>Sin gastos registrados en el ciclo</p>
-                    ) : (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <div style={{ width: '130px', height: '130px' }}>
-                                <Doughnut data={pieData} options={{ cutout: '65%', plugins: { legend: { display: false } } }} />
+            {/* Pending Payments Widget */}
+            {pendingCount > 0 && (
+                <div className="premium-card clickable" onClick={() => navigate('/scheduled')} style={{ marginBottom: '1.5rem', border: '1px solid var(--warning)', background: 'rgba(245, 158, 11, 0.05)', padding: '1.2rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                            <div style={{ background: 'var(--warning)', padding: '0.5rem', borderRadius: '10px' }}><Clock size={18} color="black" /></div>
+                            <div>
+                                <h4 style={{ fontSize: '0.9rem', fontWeight: 900 }}>{pendingCount} Pagos Pendientes</h4>
+                                <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Total a pagar: {formatCurrency(pendingTotal)}</p>
                             </div>
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                                {categoryBreakdown.slice(0, 4).map((c, i) => (
-                                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 700 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: c.color }}></div>
-                                            <span>{c.name}</span>
-                                        </div>
+                        </div>
+                        <ChevronRight size={20} color="var(--warning)" />
+                    </div>
+                </div>
+            )}
+
+            {/* Charts Grid */}
+            <div style={{ display: 'grid', gap: '1.2rem', marginBottom: '2rem' }}>
+                <div className="premium-card" style={{ padding: '1.5rem' }}>
+                    <h3 style={{ fontSize: '0.95rem', fontWeight: 900, marginBottom: '1.2rem' }}>Distribución de Gastos</h3>
+                    {totalSpentThisMonth > 0 ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ width: '110px' }}><Doughnut data={pieData} options={{ cutout: '70%', plugins: { legend: { display: false } } }} /></div>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                {categoryBreakdown.slice(0, 3).map((c, i) => (
+                                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', fontWeight: 800 }}>
+                                        <span>{c.name}</span>
                                         <span style={{ color: 'var(--text-secondary)' }}>{Math.round(c.percent)}%</span>
                                     </div>
                                 ))}
                             </div>
                         </div>
-                    )}
+                    ) : <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textAlign: 'center' }}>Sin datos aún</p>}
                 </div>
 
-                {/* 2. Comparativo de Períodos */}
                 <div className="premium-card" style={{ padding: '1.5rem' }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}><BarChart3 size={18} color="var(--primary)" /> Comparativa de Ciclos</h3>
-                    <div style={{ height: '170px' }}>
-                        <Bar
-                            data={barData}
-                            options={{
-                                responsive: true, maintainAspectRatio: false,
-                                plugins: { legend: { display: false } },
-                                scales: {
-                                    y: { display: false },
-                                    x: { grid: { display: false }, ticks: { font: { size: 11, weight: 800 }, color: 'var(--text-secondary)' } }
-                                }
-                            }}
-                        />
-                    </div>
-                    <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textAlign: 'center', marginTop: '1rem', fontWeight: 600 }}>Gasto histórico por períodos de facturación</p>
+                    <h3 style={{ fontSize: '0.95rem', fontWeight: 900, marginBottom: '1.2rem' }}>Comparativa de Períodos</h3>
+                    <div style={{ height: '140px' }}><Bar data={barData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { font: { size: 10, weight: 800 } } } } }} /></div>
                 </div>
             </div>
 
-            {/* Recientes */}
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1rem' }}>Actividad del Ciclo</h3>
+            {/* Recent Activity */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 900 }}>Actividad del Ciclo</h3>
+                <Link to="/history" style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 800 }}>Ver todo</Link>
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                {currentMonthExpenses.slice(0, 5).map((exp, i) => {
+                {currentMonthExpenses.slice(0, 4).map((exp, i) => {
                     const cat = CATEGORY_MAP[exp.categoryId] || { icon: '📦', color: '#6366f1' };
                     return (
                         <div key={exp.id || i} className="premium-card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
-                                <div style={{ fontSize: '1.2rem', padding: '0.5rem', background: 'var(--glass)', borderRadius: '12px' }}>{cat.icon}</div>
+                                <div style={{ fontSize: '1.1rem', padding: '0.4rem', background: 'var(--glass)', borderRadius: '10px' }}>{cat.icon}</div>
                                 <div>
-                                    <p style={{ fontSize: '0.95rem', fontWeight: 800 }}>{exp.description}</p>
-                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{new Date(exp.date).toLocaleDateString()}</p>
+                                    <p style={{ fontSize: '0.85rem', fontWeight: 800 }}>{exp.description}</p>
+                                    <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 700 }}>{new Date(exp.date).toLocaleDateString()}</p>
                                 </div>
                             </div>
-                            <p style={{ color: '#ff6b6b', fontWeight: 900 }}>- {formatCurrency(exp.amount)}</p>
+                            <p style={{ color: '#ff4d4d', fontWeight: 900, fontSize: '0.95rem' }}>- {formatCurrency(exp.amount)}</p>
                         </div>
                     )
                 })}
-                <Link to="/history" style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 800, marginTop: '1rem' }}>Ver Historial Detallado</Link>
             </div>
         </div>
     );

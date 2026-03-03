@@ -126,6 +126,19 @@ export interface ExpenseFilter {
     currency?: CurrencyCode;
 }
 
+/** Scheduled or pending payment */
+export interface ScheduledExpense {
+    id: string;
+    amount: number;
+    currency: CurrencyCode;
+    description: string;
+    categoryId: string;
+    dueDate: number;
+    paymentMethod: 'efectivo' | 'tarjeta' | 'transferencia';
+    status: 'pending' | 'paid';
+    createdAt: number;
+}
+
 /** Application state for context */
 export interface AppState {
     user: UserProfile | null;
