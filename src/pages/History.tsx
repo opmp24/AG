@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getAllExpenses, deleteExpense } from '../lib/db';
 import type { Expense } from '../types';
-import { Trash2, Calendar, ShoppingBag, CreditCard, ChevronLeft } from 'lucide-react';
+import { Trash2, Calendar, ShoppingBag, ChevronLeft, Edit3 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -28,11 +28,16 @@ const History: React.FC = () => {
 
     useEffect(() => { loadData(); }, []);
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
         if (window.confirm('¿Deseas eliminar permanentemente este registro?')) {
             await deleteExpense(id);
             loadData();
         }
+    };
+
+    const handleEdit = (id: string) => {
+        navigate(`/edit/${id}`);
     };
 
     const formatCurrency = (amount: number) => {
@@ -86,7 +91,7 @@ const History: React.FC = () => {
                         return (
                             <div
                                 key={exp.id}
-                                className="premium-card animate-fade-in"
+                                className="premium-card interactive-card animate-fade-in"
                                 style={{
                                     padding: '1.2rem',
                                     display: 'flex',
@@ -95,6 +100,7 @@ const History: React.FC = () => {
                                     animationDelay: `${idx * 0.05}s`,
                                     borderLeft: `4px solid ${category.color}`
                                 }}
+                                onClick={() => handleEdit(exp.id)}
                             >
                                 <div style={{ display: 'flex', gap: '1.2rem', alignItems: 'center' }}>
                                     <div style={{
@@ -105,8 +111,7 @@ const History: React.FC = () => {
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        fontSize: '1.5rem',
-                                        boxShadow: 'inset 0 0 10px rgba(255,255,255,0.05)'
+                                        fontSize: '1.5rem'
                                     }}>
                                         {category.icon}
                                     </div>
@@ -120,23 +125,36 @@ const History: React.FC = () => {
                                         </div>
                                     </div>
                                 </div>
-                                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.4rem' }}>
+                                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
                                     <p style={{ fontWeight: 900, color: '#ff6b6b', fontSize: '1.1rem' }}>- {formatCurrency(exp.amount)}</p>
-                                    <button
-                                        onClick={() => handleDelete(exp.id)}
-                                        style={{
-                                            background: 'rgba(255, 77, 77, 0.1)',
-                                            border: 'none',
-                                            padding: '0.5rem',
-                                            borderRadius: '10px',
-                                            color: '#ff6b6b',
-                                            cursor: 'pointer',
-                                            transition: 'transform 0.2s active'
-                                        }}
-                                        className="interactive-card"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleEdit(exp.id); }}
+                                            style={{
+                                                background: 'rgba(99, 102, 241, 0.1)',
+                                                border: 'none',
+                                                padding: '0.5rem',
+                                                borderRadius: '10px',
+                                                color: 'var(--primary)',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            <Edit3 size={16} />
+                                        </button>
+                                        <button
+                                            onClick={(e) => handleDelete(e, exp.id)}
+                                            style={{
+                                                background: 'rgba(255, 77, 77, 0.1)',
+                                                border: 'none',
+                                                padding: '0.5rem',
+                                                borderRadius: '10px',
+                                                color: '#ff6b6b',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         );

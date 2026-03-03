@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, Save, X, DollarSign, Calendar, Tag, AlignLeft } from 'lucide-react';
-import { saveExpense, getExpenseById } from '../lib/db';
+import { ChevronLeft, Save, X, Calendar, Tag, AlignLeft } from 'lucide-react';
+import { saveExpense, getExpenseById, getCategories } from '../lib/db';
 import { useApp } from '../context/AppContext';
 import { v4 as uuidv4 } from 'uuid';
+import type { Category } from '../types';
 
 const DEFAULT_CATEGORIES = [
     { id: '1', name: 'Alimentación', icon: '🍎', color: '#ef4444' },
@@ -24,10 +25,20 @@ const ExpenseForm: React.FC = () => {
     const [categoryId, setCategoryId] = useState('1');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [isSaving, setIsSaving] = useState(false);
+    const [categories, setCategories] = useState<Category[]>([]);
 
     useEffect(() => {
-        if (id) {
-            async function loadExpense() {
+        async function fetchData() {
+            // Cargar categorías personalizadas
+            const dbCategories = await getCategories();
+            if (dbCategories.length > 0) {
+                setCategories(dbCategories);
+            } else {
+                setCategories(DEFAULT_CATEGORIES as Category[]);
+            }
+
+            // Cargar gasto si estamos editando
+            if (id) {
                 const expense = await getExpenseById(id as string);
                 if (expense) {
                     setAmount(expense.amount.toString());
@@ -36,8 +47,8 @@ const ExpenseForm: React.FC = () => {
                     setDate(new Date(expense.date).toISOString().split('T')[0]);
                 }
             }
-            loadExpense();
         }
+        fetchData();
     }, [id]);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -140,7 +151,7 @@ const ExpenseForm: React.FC = () => {
                             <Tag size={16} color="var(--primary)" /> Categoría
                         </label>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
-                            {DEFAULT_CATEGORIES.map(cat => (
+                            {categories.map(cat => (
                                 <button
                                     key={cat.id}
                                     type="button"
@@ -170,7 +181,7 @@ const ExpenseForm: React.FC = () => {
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                     <button
                         type="button"
-                        onClick={() => navigate('/')}
+                        onClick={() => navigate(-1)}
                         className="btn-secondary"
                         style={{ flex: 1, padding: '1.2rem', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', border: '2px solid var(--glass-border)' }}
                     >
@@ -182,7 +193,7 @@ const ExpenseForm: React.FC = () => {
                         disabled={isSaving}
                         style={{ flex: 2, padding: '1.2rem', borderRadius: '18px', fontSize: '1.1rem', background: 'var(--primary)', boxShadow: '0 10px 20px rgba(99, 102, 241, 0.4)' }}
                     >
-                        {isSaving ? 'Guardando...' : <><Save size={20} /> Guardar Gasto</>}
+                        {isSaving ? 'Guardando...' : <><Save size={20} /> {id ? 'Actualizar Gasto' : 'Guardar Gasto'}</>}
                     </button>
                 </div>
             </form>
