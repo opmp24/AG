@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, Save, X, Calendar, Tag, AlignLeft, CreditCard, Banknote, Landmark, Wand2 } from 'lucide-react';
+import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom';
+import { ChevronLeft, Save, X, Calendar, Tag, AlignLeft, CreditCard, Banknote, Landmark, Wand2, Plus, Edit } from 'lucide-react';
 import { saveExpense, getExpenseById, getCategories } from '../lib/db';
 import { useApp } from '../context/AppContext';
 import { v4 as uuidv4 } from 'uuid';
@@ -52,7 +52,6 @@ const ExpenseForm: React.FC = () => {
                     setDate(new Date(expense.date).toISOString().split('T')[0]);
                 }
             } else {
-                // Si venimos de un "Smart Paste"
                 const queryAmount = searchParams.get('amount');
                 const queryMerchant = searchParams.get('merchant');
                 const querySource = searchParams.get('source');
@@ -61,7 +60,7 @@ const ExpenseForm: React.FC = () => {
                 if (queryMerchant) setDescription(queryMerchant);
                 if (querySource === 'notification') {
                     setIsMagic(true);
-                    setPaymentMethod('tarjeta'); // Por defecto para notificaciones suele ser tarjeta
+                    setPaymentMethod('tarjeta');
                 }
             }
         }
@@ -112,15 +111,15 @@ const ExpenseForm: React.FC = () => {
             </header>
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <div className="premium-card" style={{ padding: '2rem', textAlign: 'center', background: 'rgba(99, 102, 241, 0.1)', border: isMagic ? '2px solid var(--primary)' : '2px solid rgba(99, 102, 241, 0.3)' }}>
-                    <label className="form-label" style={{ fontSize: '1rem', marginBottom: '1rem' }}>Monto Detectado</label>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                        <span style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--primary)' }}>{preferences.currency === 'CLP' ? '$' : preferences.currency}</span>
+                <div className="premium-card" style={{ padding: '2.5rem', textAlign: 'center', background: 'rgba(99, 102, 241, 0.1)', border: isMagic ? '2px solid var(--primary)' : '2px solid rgba(255, 255, 255, 0.1)' }}>
+                    <label className="form-label" style={{ fontSize: '1rem', fontWeight: 900, marginBottom: '0.8rem' }}>Monto</label>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontSize: '1.5rem', fontWeight: 900, opacity: 0.5, marginRight: '0.5rem' }}>{preferences.currency === 'CLP' ? '$' : preferences.currency}</span>
                         <input
                             type="number"
                             inputMode="decimal"
                             className="form-input"
-                            style={{ background: 'transparent', border: 'none', fontSize: '3.5rem', fontWeight: 900, textAlign: 'center', width: '100%', color: 'white' }}
+                            style={{ background: 'transparent', border: 'none', fontSize: '3.5rem', fontWeight: 900, textAlign: 'center', width: '100%', color: 'white', padding: 0 }}
                             value={amount}
                             onChange={(e) => setAmount(e.target.value)}
                             required
@@ -131,18 +130,11 @@ const ExpenseForm: React.FC = () => {
                 <div className="premium-card" style={{ padding: '1.8rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                     <div className="form-group">
                         <label className="form-label"><AlignLeft size={16} color="var(--primary)" /> Descripción / Comercio</label>
-                        <input
-                            type="text"
-                            className="form-input"
-                            style={{ background: 'rgba(0,0,0,0.2)' }}
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            required
-                        />
+                        <input type="text" className="form-input" style={{ background: 'rgba(0,0,0,0.2)' }} value={description} onChange={(e) => setDescription(e.target.value)} required />
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label"><Calendar size={16} color="var(--primary)" /> Fecha</label>
+                        <label className="form-label"><Calendar size={16} color="var(--primary)" /> Fecha del Gasto</label>
                         <input type="date" className="form-input" style={{ background: 'rgba(0,0,0,0.2)' }} value={date} onChange={(e) => setDate(e.target.value)} required />
                     </div>
 
@@ -151,19 +143,14 @@ const ExpenseForm: React.FC = () => {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
                             {PAYMENT_METHODS.map(m => (
                                 <button
-                                    key={m.id}
-                                    type="button"
+                                    key={m.id} type="button"
                                     onClick={() => setPaymentMethod(m.id as any)}
                                     className={`premium-card ${paymentMethod === m.id ? 'active' : ''}`}
                                     style={{
-                                        padding: '0.8rem 0.5rem',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'center',
-                                        gap: '0.5rem',
+                                        padding: '0.8rem 0.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem',
                                         background: paymentMethod === m.id ? m.color : 'rgba(255,255,255,0.03)',
                                         border: paymentMethod === m.id ? '2px solid white' : '1px solid var(--glass-border)',
-                                        opacity: paymentMethod === m.id ? 1 : 0.7
+                                        opacity: paymentMethod === m.id ? 1 : 0.8
                                     }}
                                 >
                                     <m.icon size={20} />
@@ -174,28 +161,37 @@ const ExpenseForm: React.FC = () => {
                     </div>
 
                     <div>
-                        <label className="form-label"><Tag size={16} color="var(--primary)" /> Categoría</label>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
+                            <label className="form-label" style={{ margin: 0 }}><Tag size={16} color="var(--primary)" /> Categoría</label>
+                            <Link to="/categories" style={{ fontSize: '0.7rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 800, textDecoration: 'none' }}>
+                                <Edit size={12} /> GESTIONAR
+                            </Link>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.6rem' }}>
                             {categories.map(cat => (
                                 <button
-                                    key={cat.id}
-                                    type="button"
+                                    key={cat.id} type="button"
                                     onClick={() => setCategoryId(cat.id)}
                                     className={`premium-card ${categoryId === cat.id ? 'active' : ''}`}
                                     style={{
-                                        padding: '0.8rem 0.5rem',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'center',
-                                        gap: '0.5rem',
-                                        background: categoryId === cat.id ? 'var(--primary)' : 'rgba(255,255,255,0.03)',
+                                        padding: '0.8rem 0.2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem',
+                                        background: categoryId === cat.id ? cat.color : 'rgba(255,255,255,0.03)',
                                         border: categoryId === cat.id ? '2px solid white' : '1px solid var(--glass-border)',
+                                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
                                     }}
                                 >
-                                    <span style={{ fontSize: '1.5rem' }}>{cat.icon}</span>
-                                    <span style={{ fontSize: '0.7rem', fontWeight: 700 }}>{cat.name}</span>
+                                    <span style={{ fontSize: '1.4rem' }}>{cat.icon}</span>
+                                    <span style={{ fontSize: '0.62rem', fontWeight: 900, textAlign: 'center', color: categoryId === cat.id ? 'white' : 'var(--text-secondary)' }}>{cat.name.toUpperCase()}</span>
                                 </button>
                             ))}
+                            <Link
+                                to="/categories"
+                                className="premium-card"
+                                style={{ padding: '0.8rem 0.2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', background: 'rgba(99, 102, 241, 0.1)', border: '1px dashed var(--primary)', textDecoration: 'none' }}
+                            >
+                                <Plus size={20} color="var(--primary)" />
+                                <span style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--primary)' }}>AÑADIR</span>
+                            </Link>
                         </div>
                     </div>
                 </div>
