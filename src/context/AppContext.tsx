@@ -19,6 +19,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
     notificationsEnabled: true,
     monthlyBudget: 0,
     budgetAlertThreshold: 80,
+    billingCycleStartDay: 1,
     profileId: ''
 };
 

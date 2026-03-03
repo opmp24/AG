@@ -64,6 +64,7 @@ export interface UserPreferences {
     notificationsEnabled: boolean;
     monthlyBudget: number;
     budgetAlertThreshold: number;
+    billingCycleStartDay: number; // Nuevo: Día de inicio del mes (ej. 28)
     profileId: string;
 }
 

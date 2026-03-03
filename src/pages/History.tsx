@@ -4,6 +4,7 @@ import type { Expense } from '../types';
 import { Trash2, Calendar, ShoppingBag, ChevronLeft, Edit3, CreditCard, Banknote, Landmark, ChevronRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
+import { getBillingPeriodRange, formatPeriodName } from '../lib/periods';
 
 const CATEGORY_MAP: Record<string, { icon: string, color: string, name: string }> = {
     '1': { name: 'Alimentación', icon: '🍎', color: '#ef4444' },
@@ -21,26 +22,30 @@ const PAYMENT_ICON: Record<string, any> = {
 };
 
 const History: React.FC = () => {
-    const [expenses, setExpenses] = useState<Expense[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [selectedDate, setSelectedDate] = useState(new Date());
     const { preferences } = useApp();
     const navigate = useNavigate();
+
+    const [periodOffset, setPeriodOffset] = useState(0);
+    const [expenses, setExpenses] = useState<Expense[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [periodRange, setPeriodRange] = useState({ start: 0, end: 0 });
 
     const loadData = async () => {
         setLoading(true);
         const data = await getAllExpenses();
 
-        // Filtrar por el mes seleccionado
-        const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1).getTime();
-        const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0, 23, 59, 59).getTime();
+        // Calcular el rango del período basado en el offset y el día de inicio
+        const now = new Date();
+        const referenceDate = new Date(now.getFullYear(), now.getMonth() + periodOffset, now.getDate());
+        const range = getBillingPeriodRange(referenceDate, preferences.billingCycleStartDay || 1);
+        setPeriodRange(range);
 
-        const filtered = data.filter(e => e.date >= startOfMonth && e.date <= endOfMonth);
+        const filtered = data.filter(e => e.date >= range.start && e.date <= range.end);
         setExpenses(filtered);
         setLoading(false);
     };
 
-    useEffect(() => { loadData(); }, [selectedDate]);
+    useEffect(() => { loadData(); }, [periodOffset, preferences.billingCycleStartDay]);
 
     const handleDelete = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
@@ -50,20 +55,11 @@ const History: React.FC = () => {
         }
     };
 
-    const handleEdit = (id: string) => {
-        navigate(`/edit/${id}`);
-    };
-
-    const changeMonth = (offset: number) => {
-        const d = new Date(selectedDate);
-        d.setMonth(d.getMonth() + offset);
-        setSelectedDate(d);
-    };
+    const handleEdit = (id: string) => { navigate(`/edit/${id}`); };
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('es-CL', {
-            style: 'currency',
-            currency: preferences.currency,
+            style: 'currency', currency: preferences.currency,
             maximumFractionDigits: preferences.currency === 'CLP' ? 0 : 2
         }).format(amount);
     };
@@ -86,13 +82,14 @@ const History: React.FC = () => {
                     <h1 className="gradient-text" style={{ fontSize: '1.8rem', fontWeight: 900 }}>Actividad</h1>
                 </div>
 
-                {/* Selector de Mes */}
-                <div className="premium-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem' }}>
-                    <button onClick={() => changeMonth(-1)} style={{ background: 'transparent', border: 'none', color: 'white' }}><ChevronLeft /></button>
-                    <span style={{ fontWeight: 800, textTransform: 'capitalize', fontSize: '1.1rem' }}>
-                        {selectedDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
-                    </span>
-                    <button onClick={() => changeMonth(1)} style={{ background: 'transparent', border: 'none', color: 'white' }}><ChevronRight /></button>
+                {/* Selector de Ciclo de Facturación */}
+                <div className="premium-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', border: '1px solid var(--glass-border)' }}>
+                    <button onClick={() => setPeriodOffset(periodOffset - 1)} style={{ background: 'transparent', border: 'none', color: 'white' }}><ChevronLeft /></button>
+                    <div style={{ textAlign: 'center' }}>
+                        <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 800, textTransform: 'uppercase' }}>Ciclo de Facturación</p>
+                        <span style={{ fontWeight: 900, fontSize: '1rem' }}>{formatPeriodName(periodRange.start, periodRange.end)}</span>
+                    </div>
+                    <button onClick={() => setPeriodOffset(periodOffset + 1)} style={{ background: 'transparent', border: 'none', color: 'white' }}><ChevronRight /></button>
                 </div>
             </header>
 

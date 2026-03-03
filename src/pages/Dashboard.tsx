@@ -1,21 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { TrendingUp, Wallet, Bell, PieChart as PieIcon, Sparkles, ChevronRight, BarChart3, ChevronLeft, Calendar } from 'lucide-react';
+import { TrendingUp, Wallet, Bell, PieChart as PieIcon, Sparkles, ChevronRight, BarChart3, ChevronLeft, Calendar, LayoutGrid } from 'lucide-react';
 import { getAllExpenses } from '../lib/db';
 import type { Expense } from '../types';
 import { useApp } from '../context/AppContext';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-    Chart as ChartJS,
-    ArcElement,
-    Tooltip,
-    Legend,
-    CategoryScale,
-    LinearScale,
-    BarElement,
-    Title
+    Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title
 } from 'chart.js';
 import { Doughnut, Bar } from 'react-chartjs-2';
 import { parseBankNotification } from '../lib/parser';
+import { getBillingPeriodRange, formatPeriodName } from '../lib/periods';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
@@ -33,54 +27,44 @@ const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
 
-    // Period state
-    const [selectedDate, setSelectedDate] = useState(new Date());
-
-    // Stats state
+    // Period state (now using offset of periods)
+    const [periodOffset, setPeriodOffset] = useState(0);
     const [currentMonthExpenses, setCurrentMonthExpenses] = useState<Expense[]>([]);
     const [allExpenses, setAllExpenses] = useState<Expense[]>([]);
     const [comparisonData, setComparisonData] = useState<{ labels: string[], totals: number[] }>({ labels: [], totals: [] });
+    const [periodRange, setPeriodRange] = useState({ start: 0, end: 0 });
 
     const loadData = async () => {
         try {
             const expenses = await getAllExpenses();
             setAllExpenses(expenses);
 
-            const startOfSelectedMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1).getTime();
-            const endOfSelectedMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0, 23, 59, 59).getTime();
+            // Calcular el rango del período basado en el offset y el día de inicio
+            const now = new Date();
+            const referenceDate = new Date(now.getFullYear(), now.getMonth() + periodOffset, now.getDate());
+            const range = getBillingPeriodRange(referenceDate, preferences.billingCycleStartDay || 1);
+            setPeriodRange(range);
 
-            const monthExpenses = expenses.filter(e => e.date >= startOfSelectedMonth && e.date <= endOfSelectedMonth);
+            const monthExpenses = expenses.filter(e => e.date >= range.start && e.date <= range.end);
             setCurrentMonthExpenses(monthExpenses);
 
-            // Comparación de los últimos 6 meses
-            const monthMap: Record<string, number> = {};
+            // Comparación de los últimos 6 períodos de facturación
+            const periodTotals: number[] = [];
             const labels: string[] = [];
 
             for (let i = 5; i >= 0; i--) {
-                const d = new Date();
-                d.setMonth(d.getMonth() - i);
-                const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
-                const label = d.toLocaleDateString('es-ES', { month: 'short' });
-                labels.push(label);
-                monthMap[key] = 0;
+                const pastRefDate = new Date(now.getFullYear(), now.getMonth() - i + periodOffset, now.getDate());
+                const pastRange = getBillingPeriodRange(pastRefDate, preferences.billingCycleStartDay || 1);
+
+                const total = expenses
+                    .filter(e => e.date >= pastRange.start && e.date <= pastRange.end)
+                    .reduce((sum, e) => sum + e.amount, 0);
+
+                periodTotals.push(total);
+                labels.push(new Date(pastRange.start).toLocaleDateString('es-ES', { month: 'short' }));
             }
 
-            expenses.forEach(e => {
-                const d = new Date(e.date);
-                const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
-                if (monthMap[key] !== undefined) {
-                    monthMap[key] += e.amount;
-                }
-            });
-
-            setComparisonData({
-                labels,
-                totals: labels.map((_, i) => {
-                    const d = new Date();
-                    d.setMonth(d.getMonth() - (5 - i));
-                    return monthMap[`${d.getFullYear()}-${d.getMonth() + 1}`];
-                })
-            });
+            setComparisonData({ labels, totals: periodTotals });
 
         } catch (err) {
             console.error(err);
@@ -89,10 +73,9 @@ const Dashboard: React.FC = () => {
         }
     };
 
-    useEffect(() => { loadData(); }, [selectedDate, preferences.currency]);
+    useEffect(() => { loadData(); }, [periodOffset, preferences.billingCycleStartDay, preferences.currency]);
 
     const totalSpentThisMonth = currentMonthExpenses.reduce((sum, e) => sum + e.amount, 0);
-    const balance = (preferences.monthlyBudget || 0) - totalSpentThisMonth;
     const budgetUsedPercent = (preferences.monthlyBudget || 0) > 0 ? (totalSpentThisMonth / preferences.monthlyBudget) * 100 : 0;
 
     const breakdownMap: Record<string, number> = {};
@@ -150,12 +133,6 @@ const Dashboard: React.FC = () => {
         }]
     };
 
-    const changeMonth = (offset: number) => {
-        const d = new Date(selectedDate);
-        d.setMonth(d.getMonth() + offset);
-        setSelectedDate(d);
-    };
-
     if (loading) return (
         <div style={{ display: 'flex', height: '80vh', alignItems: 'center', justifyContent: 'center' }}>
             <div className="spinner" style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
@@ -164,18 +141,18 @@ const Dashboard: React.FC = () => {
 
     return (
         <div className="animate-slide-up" style={{ padding: '1.5rem', maxWidth: '600px', margin: '0 auto', paddingBottom: '4rem' }}>
-            {/* Header con Período */}
+            {/* Header con Ciclo de Facturación */}
             <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <img src={user?.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=HogarSafe"} style={{ width: '45px', height: '45px', borderRadius: '15px', border: '2px solid var(--primary)' }} />
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Cuentas de</span>
-                        <h1 style={{ fontSize: '1.1rem', fontWeight: 900 }}>{selectedDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</h1>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Cierre el día {preferences.billingCycleStartDay}</span>
+                        <h1 style={{ fontSize: '1rem', fontWeight: 900 }}>{formatPeriodName(periodRange.start, periodRange.end)}</h1>
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button onClick={() => changeMonth(-1)} style={{ background: 'var(--glass)', border: 'none', padding: '0.5rem', borderRadius: '10px', color: 'white' }}><ChevronLeft size={20} /></button>
-                    <button onClick={() => changeMonth(1)} style={{ background: 'var(--glass)', border: 'none', padding: '0.5rem', borderRadius: '10px', color: 'white' }}><ChevronRight size={20} /></button>
+                    <button onClick={() => setPeriodOffset(periodOffset - 1)} style={{ background: 'var(--glass)', border: 'none', padding: '0.5rem', borderRadius: '10px', color: 'white' }}><ChevronLeft size={20} /></button>
+                    <button onClick={() => setPeriodOffset(periodOffset + 1)} style={{ background: 'var(--glass)', border: 'none', padding: '0.5rem', borderRadius: '10px', color: 'white' }}><ChevronRight size={20} /></button>
                 </div>
             </header>
 
@@ -192,7 +169,7 @@ const Dashboard: React.FC = () => {
             {/* Balance Card */}
             <div className="premium-card gradient-bg" style={{ borderRadius: '25px', padding: '2rem', color: 'white', marginBottom: '1.5rem', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'relative', zIndex: 1 }}>
-                    <p style={{ opacity: 0.8, fontWeight: 600 }}>Total Periodo</p>
+                    <p style={{ opacity: 0.8, fontWeight: 600 }}>Gasto en este Período</p>
                     <h2 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.04em' }}>{formatCurrency(totalSpentThisMonth)}</h2>
                     <div style={{ marginTop: '1.5rem', background: 'rgba(255,255,255,0.15)', height: '8px', borderRadius: '10px' }}>
                         <div style={{ width: `${Math.min(budgetUsedPercent, 100)}%`, height: '100%', background: budgetUsedPercent > 90 ? '#ff6b6b' : 'white', borderRadius: '10px', transition: 'width 0.5s ease' }}></div>
@@ -208,22 +185,22 @@ const Dashboard: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem', marginBottom: '2rem' }}>
                 {/* 1. Distribución Categorías */}
                 <div className="premium-card" style={{ padding: '1.5rem' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><PieIcon size={18} color="var(--primary)" /> Distribución</h3>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}><PieIcon size={18} color="var(--primary)" /> Gastos por Categoría</h3>
                     {totalSpentThisMonth === 0 ? (
-                        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>Sin gastos registrados este mes</p>
+                        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>Sin gastos registrados en el ciclo</p>
                     ) : (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <div style={{ width: '120px', height: '120px' }}>
+                            <div style={{ width: '130px', height: '130px' }}>
                                 <Doughnut data={pieData} options={{ cutout: '65%', plugins: { legend: { display: false } } }} />
                             </div>
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                {categoryBreakdown.slice(0, 3).map((c, i) => (
-                                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 600 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                            <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: c.color }}></div>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                                {categoryBreakdown.slice(0, 4).map((c, i) => (
+                                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 700 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: c.color }}></div>
                                             <span>{c.name}</span>
                                         </div>
-                                        <span>{Math.round(c.percent)}%</span>
+                                        <span style={{ color: 'var(--text-secondary)' }}>{Math.round(c.percent)}%</span>
                                     </div>
                                 ))}
                             </div>
@@ -231,10 +208,10 @@ const Dashboard: React.FC = () => {
                     )}
                 </div>
 
-                {/* 2. Comparativo Mensual */}
+                {/* 2. Comparativo de Períodos */}
                 <div className="premium-card" style={{ padding: '1.5rem' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><BarChart3 size={18} color="var(--primary)" /> Histórico 6 Meses</h3>
-                    <div style={{ height: '150px' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}><BarChart3 size={18} color="var(--primary)" /> Comparativa de Ciclos</h3>
+                    <div style={{ height: '170px' }}>
                         <Bar
                             data={barData}
                             options={{
@@ -242,25 +219,26 @@ const Dashboard: React.FC = () => {
                                 plugins: { legend: { display: false } },
                                 scales: {
                                     y: { display: false },
-                                    x: { grid: { display: false }, ticks: { font: { size: 10, weight: 800 }, color: 'var(--text-secondary)' } }
+                                    x: { grid: { display: false }, ticks: { font: { size: 11, weight: 800 }, color: 'var(--text-secondary)' } }
                                 }
                             }}
                         />
                     </div>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textAlign: 'center', marginTop: '1rem', fontWeight: 600 }}>Gasto histórico por períodos de facturación</p>
                 </div>
             </div>
 
             {/* Recientes */}
-            <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '1rem' }}>Últimos Movimientos</h3>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1rem' }}>Actividad del Ciclo</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                {currentMonthExpenses.slice(0, 4).map((exp, i) => {
+                {currentMonthExpenses.slice(0, 5).map((exp, i) => {
                     const cat = CATEGORY_MAP[exp.categoryId] || { icon: '📦', color: '#6366f1' };
                     return (
-                        <div key={i} className="premium-card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div key={exp.id || i} className="premium-card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
                                 <div style={{ fontSize: '1.2rem', padding: '0.5rem', background: 'var(--glass)', borderRadius: '12px' }}>{cat.icon}</div>
                                 <div>
-                                    <p style={{ fontSize: '0.9rem', fontWeight: 800 }}>{exp.description}</p>
+                                    <p style={{ fontSize: '0.95rem', fontWeight: 800 }}>{exp.description}</p>
                                     <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{new Date(exp.date).toLocaleDateString()}</p>
                                 </div>
                             </div>
@@ -268,7 +246,7 @@ const Dashboard: React.FC = () => {
                         </div>
                     )
                 })}
-                <Link to="/history" style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 800, marginTop: '0.5rem' }}>Ver Historial Completo</Link>
+                <Link to="/history" style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 800, marginTop: '1rem' }}>Ver Historial Detallado</Link>
             </div>
         </div>
     );

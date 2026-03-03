@@ -7,6 +7,9 @@ import type { DetectedPayment } from '../types';
 export function parseBankNotification(text: string): DetectedPayment | null {
     if (!text) return null;
 
+    // Limpiar espacios extras
+    const cleanText = text.trim();
+
     // Patrón 1: Compra con tarjeta (Monto + Comercio)
     // Ejemplo: "Compra por $25.000 en LIDER el 03/03/2024..."
     const purchaseRegex = /(?:Compra|Cargo|Gasto|Pago)(?:\s+por)?\s+\$?([\d.]+)(?:\s+en)?\s+([^0-9]+?)(?:\s+el|\s+con|\s*$)/i;
@@ -16,34 +19,54 @@ export function parseBankNotification(text: string): DetectedPayment | null {
     const transferRegex = /(?:Transferencia|Transf\.|TEF)(?:\s+por)?\s+\$?([\d.]+)(?:\s+a)?\s+([^0-9]+?)(?:\s+el|\s*$)/i;
 
     // Intentar emparejar compra
-    let match = text.match(purchaseRegex);
-    if (!match) match = text.match(transferRegex);
+    let match = cleanText.match(purchaseRegex);
+    if (!match) match = cleanText.match(transferRegex);
 
     if (match) {
-        const amountStr = match[1].replace(/\./g, ''); // Quitar puntos de miles "15.000" -> "15000"
+        const amountStr = match[1].replace(/\./g, '');
         const merchant = match[2].trim();
 
         return {
             amount: parseInt(amountStr, 10),
             merchant: merchant.length > 30 ? merchant.substring(0, 30) : merchant,
             date: Date.now(),
-            rawText: text,
+            rawText: cleanText,
             confidence: 0.9
         };
     }
 
-    // Patrón genérico: Solo monto
-    const amountOnlyRegex = /\$?([\d.]+)/;
-    const amountMatch = text.match(amountOnlyRegex);
+    // Patrón genérico: Solo monto (Último recurso si hay algo como "$15.000")
+    const amountOnlyRegex = /\$?(\d{1,3}(?:\.\d{3})+)/; // Busca formato 1.000 o 15.000
+    const amountMatch = cleanText.match(amountOnlyRegex);
     if (amountMatch) {
         return {
             amount: parseInt(amountMatch[1].replace(/\./g, ''), 10),
-            merchant: 'Comercio Desconocido',
+            merchant: 'Gasto Detectado',
             date: Date.now(),
-            rawText: text,
+            rawText: cleanText,
             confidence: 0.5
         };
     }
 
     return null;
+}
+
+/**
+ * Parsea múltiples líneas de texto (ej. copiado de una cartola o lista de notificaciones)
+ */
+export function parseBulkBankMovements(text: string): DetectedPayment[] {
+    if (!text) return [];
+
+    // Separar por líneas
+    const lines = text.split(/\r?\n/).filter(line => line.trim().length > 5);
+    const results: DetectedPayment[] = [];
+
+    lines.forEach(line => {
+        const parsed = parseBankNotification(line);
+        if (parsed && parsed.amount > 0) {
+            results.push(parsed);
+        }
+    });
+
+    return results;
 }
