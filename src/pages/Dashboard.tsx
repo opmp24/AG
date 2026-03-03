@@ -20,6 +20,7 @@ const CATEGORY_MAP: Record<string, { icon: string, color: string, name: string }
     '4': { name: 'Ocio', icon: '🍿', color: '#f59e0b' },
     '5': { name: 'Salud', icon: '⚕️', color: '#ec4899' },
     '6': { name: 'Otros', icon: '📦', color: '#6366f1' },
+    '7': { name: 'Pagos', icon: '💸', color: '#8b5cf6' },
 };
 
 const Dashboard: React.FC = () => {

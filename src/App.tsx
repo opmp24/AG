@@ -47,11 +47,11 @@ const AppContent: React.FC = () => {
 
             <nav className="bottom-nav">
                 <NavLink to="/" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <LayoutDashboard size={24} />
+                    <LayoutDashboard size={20} />
                     <span>Inicio</span>
                 </NavLink>
                 <NavLink to="/history" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <List size={24} />
+                    <List size={20} />
                     <span>Historial</span>
                 </NavLink>
 
@@ -62,11 +62,15 @@ const AppContent: React.FC = () => {
                 </div>
 
                 <NavLink to="/scheduled" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <CalendarCheck size={24} />
-                    <span>Compromisos</span>
+                    <CalendarCheck size={20} />
+                    <span>Pagos</span>
+                </NavLink>
+                <NavLink to="/categories" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                    <PieChart size={20} />
+                    <span>Categorías</span>
                 </NavLink>
                 <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <Settings size={24} />
+                    <Settings size={20} />
                     <span>Ajustes</span>
                 </NavLink>
             </nav>

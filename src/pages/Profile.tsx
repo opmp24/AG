@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogOut, Shield, Download, Upload, CreditCard, CheckCircle2, User as UserIcon, Lock, Database, Globe, Smartphone, Heart, Wand2, Plus, Calendar, Save, FileText, AlertCircle } from 'lucide-react';
+import { LogOut, Shield, Download, Upload, CreditCard, CheckCircle2, User as UserIcon, Lock, Database, Globe, Smartphone, Heart, Wand2, Plus, Calendar, Save, FileText, AlertCircle, ShoppingCart, TrendingDown } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
@@ -43,28 +43,28 @@ const Profile: React.FC = () => {
         try {
             const detections = parseBulkBankMovements(bulkText);
             if (detections.length === 0) {
-                alert('No se detectaron movimientos válidos. Asegúrate de que el texto contenga montos (ej. $15.000).');
+                alert('No se detectaron gastos válidos. El lector ignora automáticamente abonos y transferencias de ingreso.');
                 return;
             }
 
-            let totalImported = 0;
+            let totalImportedAmount = 0;
             for (const item of detections) {
                 await saveExpense({
                     id: uuidv4(),
                     amount: item.amount,
                     currency: preferences.currency,
                     description: item.merchant,
-                    categoryId: '6', // Otros por defecto
+                    categoryId: item.categoryId || '6',
                     date: Date.now(),
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
                     source: 'notification',
-                    paymentMethod: 'tarjeta'
+                    paymentMethod: item.paymentMethod || 'tarjeta'
                 });
-                totalImported += item.amount;
+                totalImportedAmount += item.amount;
             }
 
-            setImportResult({ count: detections.length, total: totalImported });
+            setImportResult({ count: detections.length, total: totalImportedAmount });
             setBulkText('');
         } catch (err) {
             console.error(err);
@@ -86,7 +86,6 @@ const Profile: React.FC = () => {
 
             {!isAuthenticated ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                    {/* (Landing Content omitted for brevity in thought, but should be complete in real write) */}
                     <div className="premium-card" style={{ textAlign: 'center', padding: '3.5rem 2rem', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(15, 17, 26, 1) 100%)', border: '2px solid var(--primary)', borderRadius: '35px' }}>
                         <div style={{ width: '90px', height: '90px', background: 'var(--primary)', borderRadius: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2.5rem', boxShadow: '0 15px 35px rgba(99, 102, 241, 0.5)' }}>
                             <Shield size={45} color="white" />
@@ -149,26 +148,33 @@ const Profile: React.FC = () => {
                     {/* CARGA MASIVA */}
                     <section>
                         <h3 style={{ marginBottom: '1.2rem', fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <Plus size={20} color="var(--primary)" /> Importar Movimientos
+                            <TrendingDown size={20} color="var(--primary)" /> Importar Cartola de Banco
                         </h3>
                         <div className="premium-card" style={{ padding: '2rem' }}>
                             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-                                Pega aquí la lista de movimientos de tu banco. Detectaremos montos y comercios automáticamente.
+                                Copia líneas de tu cartola y pégalas abajo. Se extraerá la descripción real y el monto de cargo. **Ignoraremos abonos automáticamente.**
                             </p>
                             <textarea
                                 value={bulkText}
                                 onChange={(e) => setBulkText(e.target.value)}
                                 className="form-input"
-                                placeholder="Compra por $5.000 en Uber...&#10;Pago por $12.000 en Lider..."
-                                style={{ minHeight: '120px', fontSize: '0.9rem', background: 'rgba(0,0,0,0.2)', padding: '1rem' }}
+                                placeholder="03/03/2026	Transferencia enviada a Servipag	30.000..."
+                                style={{ minHeight: '120px', fontSize: '0.8rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', whiteSpace: 'pre' }}
                             />
 
                             {importResult && (
-                                <div style={{ margin: '1rem 0', padding: '1rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '15px', border: '1px solid var(--success)' }}>
-                                    <p style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <CheckCircle2 size={16} /> ¡Importación Exitosa!
-                                    </p>
-                                    <p style={{ fontSize: '0.75rem' }}>Se cargaron {importResult.count} registros por un total de ${importResult.total.toLocaleString()}.</p>
+                                <div className="animate-fade-in" style={{ margin: '1rem 0', padding: '1.2rem', background: 'rgba(16, 185, 129, 0.12)', borderRadius: '15px', border: '1px solid var(--success)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div>
+                                            <p style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--success)' }}>¡Importación Finalizada!</p>
+                                            <p style={{ fontSize: '0.75rem', opacity: 0.8 }}>Se detectaron {importResult.count} cargos genuinos.</p>
+                                        </div>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <p style={{ fontSize: '1.1rem', fontWeight: 900, color: 'white' }}>${importResult.total.toLocaleString()}</p>
+                                            <p style={{ fontSize: '0.6rem', color: 'var(--success)', fontWeight: 800, textTransform: 'uppercase' }}>Total Gastos</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setImportResult(null)} style={{ marginTop: '0.5rem', fontSize: '0.7rem', background: 'transparent', border: 'none', color: 'var(--text-secondary)', textDecoration: 'underline' }}>Cerrar aviso</button>
                                 </div>
                             )}
 
@@ -178,31 +184,29 @@ const Profile: React.FC = () => {
                                 onClick={handleBulkImport}
                                 disabled={importing || !bulkText}
                             >
-                                {importing ? 'Procesando...' : <><FileText size={20} /> Cargar {bulkText.split('\n').filter(l => l.trim()).length} Movimientos</>}
+                                {importing ? 'Procesando...' : <><FileText size={20} /> Procesar {bulkText.split('\n').filter(l => l.trim()).length} Líneas</>}
                             </button>
                         </div>
                     </section>
 
-                    {/* Respaldo y Otros (Simulador) */}
+                    {/* Respaldo y Simulador */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                        <button className="premium-card" style={{ padding: '1rem', textAlign: 'center' }}>
+                        <button className="premium-card interactive-card" style={{ padding: '1rem', textAlign: 'center' }}>
                             <Download size={20} color="var(--primary)" />
-                            <p style={{ fontSize: '0.8rem', fontWeight: 700, marginTop: '0.5rem' }}>Exportar Datos</p>
+                            <p style={{ fontSize: '0.8rem', fontWeight: 700, marginTop: '0.5rem' }}>Respaldar (.json)</p>
                         </button>
-                        <button className="premium-card" style={{ padding: '1rem', textAlign: 'center' }} onClick={() => {
-                            const text = "Compra por $25.000 en LIDER\nCompra por $12.500 en SHELL\nTransf. por $5.000 a Pedro";
+                        <button className="premium-card interactive-card" style={{ padding: '1rem', textAlign: 'center', border: '1px dashed var(--warning)' }} onClick={() => {
+                            const text = "03/03/2026	Transferencia enviada a Servipag	3.206\n01/03/2026	COMPRA MALL PLAZA VESPUCIO	Titular	$5.899	01/01	$5.899\n01/03/2026	COMPRA PC FACTORY PLAZA VES	Titular	$12.590	01/01	$12.590\n02/03/2026	Transferencia recibida de JUAN PEREZ	500.000";
                             setBulkText(text);
                         }}>
                             <Wand2 size={20} color="var(--warning)" />
-                            <p style={{ fontSize: '0.8rem', fontWeight: 700, marginTop: '0.5rem' }}>Texto Prueba</p>
+                            <p style={{ fontSize: '0.8rem', fontWeight: 700, marginTop: '0.5rem' }}>Cargar Ejemplo Real</p>
                         </button>
                     </div>
 
                     <button className="btn-danger" onClick={logout} style={{ marginTop: '1rem', height: '55px' }}>
                         <LogOut size={20} /> Cerrar Sesión Segura
                     </button>
-
-                    <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.7rem' }}>HogarSafe v1.5.0 • Cifrado Local In-Browser</p>
                 </div>
             )}
         </div>

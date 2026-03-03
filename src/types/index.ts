@@ -106,6 +106,8 @@ export interface DetectedPayment {
     date: number;
     rawText: string;
     confidence: number;
+    categoryId?: string;
+    paymentMethod?: 'efectivo' | 'tarjeta' | 'transferencia';
 }
 
 /** Export/Import result */

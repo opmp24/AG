@@ -11,6 +11,7 @@ const DEFAULT_CATEGORIES_DATA = [
     { id: '4', name: 'Ocio', icon: '🍿', color: '#f59e0b' },
     { id: '5', name: 'Salud', icon: '⚕️', color: '#ec4899' },
     { id: '6', name: 'Otros', icon: '📦', color: '#6366f1' },
+    { id: '7', name: 'Pagos', icon: '💸', color: '#8b5cf6' },
 ];
 
 const ICON_OPTIONS = ['🍎', '🏠', '🚗', '🍿', '⚕️', '📦', '🛒', '🔌', '🎬', '💊', '👕', '🎮', '✈️', '🐶', '🎁'];
@@ -143,9 +144,10 @@ const Categories: React.FC = () => {
                                 <div>
                                     <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>{cat.name}</span>
                                     {cat.id === '6' && <p style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 800 }}>GENERAL / REASIGNACIÓN</p>}
+                                    {cat.id === '7' && <p style={{ fontSize: '0.65rem', color: '#8b5cf6', fontWeight: 800 }}>PAGOS / FISCAL</p>}
                                 </div>
                             </div>
-                            {cat.id !== '6' && (
+                            {cat.id !== '6' && cat.id !== '7' && (
                                 <button
                                     onClick={(e) => { e.stopPropagation(); handleDelete(cat.id, cat.name); }}
                                     style={{ background: 'transparent', border: 'none', color: '#ff6b6b', opacity: 0.6, cursor: 'pointer' }}

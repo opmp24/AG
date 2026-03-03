@@ -13,6 +13,7 @@ const DEFAULT_CATEGORIES = [
     { id: '4', name: 'Ocio', icon: '🍿', color: '#f59e0b' },
     { id: '5', name: 'Salud', icon: '⚕️', color: '#ec4899' },
     { id: '6', name: 'Otros', icon: '📦', color: '#6366f1' },
+    { id: '7', name: 'Pagos', icon: '💸', color: '#8b5cf6' },
 ];
 
 const PAYMENT_METHODS = [
