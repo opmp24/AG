@@ -1,0 +1,72 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
+import path from 'path';
+
+export default defineConfig({
+    plugins: [
+        react(),
+        VitePWA({
+            registerType: 'autoUpdate',
+            includeAssets: ['favicon.svg', 'icons/*.png'],
+            manifest: {
+                name: 'HogarSafe - Control de Gastos',
+                short_name: 'HogarSafe',
+                description: 'Gestión y control de gastos del hogar con privacidad total',
+                theme_color: '#6366f1',
+                background_color: '#0f0f23',
+                display: 'standalone',
+                orientation: 'portrait-primary',
+                scope: '/',
+                start_url: '/',
+                lang: 'es',
+                categories: ['finance', 'utilities'],
+                icons: [
+                    { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+                    { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+                ],
+                shortcuts: [
+                    {
+                        name: 'Agregar Gasto',
+                        short_name: 'Gasto',
+                        description: 'Registrar un nuevo gasto',
+                        url: '/?action=add',
+                        icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }]
+                    }
+                ]
+            },
+            workbox: {
+                globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+                runtimeCaching: [
+                    {
+                        urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+                        handler: 'CacheFirst',
+                        options: {
+                            cacheName: 'google-fonts-cache',
+                            expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+                            cacheableResponse: { statuses: [0, 200] }
+                        }
+                    },
+                    {
+                        urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+                        handler: 'CacheFirst',
+                        options: {
+                            cacheName: 'gstatic-fonts-cache',
+                            expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+                            cacheableResponse: { statuses: [0, 200] }
+                        }
+                    }
+                ]
+            }
+        })
+    ],
+    resolve: {
+        alias: {
+            '@': path.resolve(__dirname, './src')
+        }
+    },
+    server: {
+        port: 3000,
+        host: true
+    }
+});
