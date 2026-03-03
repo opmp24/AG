@@ -74,6 +74,7 @@ const Dashboard: React.FC = () => {
                     <div>
                         <h2 style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Hola, <span style={{ color: 'white', fontWeight: 800 }}>{user?.name.split(' ')[0]}</span> 👋</h2>
                         <h1 style={{ fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.02em' }}>Mi Billetera</h1>
+                        <p style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 800, opacity: 0.8 }}>VERSION 1.2.0-PATCH</p>
                     </div>
                 </div>
                 <button className="premium-card interactive-card" style={{ padding: '0.9rem', borderRadius: '20px', margin: 0, position: 'relative', background: 'rgba(255, 255, 255, 0.08)', border: '2px solid var(--glass-border)' }}>
