@@ -56,7 +56,6 @@ const Profile: React.FC = () => {
                             onSuccess={handleGoogleSuccess}
                             onError={() => console.log('Login Failed')}
                             useOneTap={false}
-                            prompt="select_account"
                             theme="filled_blue"
                             shape="pill"
                             size="large"

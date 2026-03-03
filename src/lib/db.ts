@@ -78,6 +78,13 @@ export async function deleteExpense(id: string): Promise<void> {
     await db.delete('expenses', id);
 }
 
+export async function getExpenseById(id: string): Promise<Expense | null> {
+    const db = await dbPromise;
+    const item = await db.get('expenses', id);
+    if (!item) return null;
+    return await decryptData(item.data, item.iv);
+}
+
 export async function saveCategory(category: Category): Promise<void> {
     const db = await dbPromise;
     await db.put('categories', category);
