@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { TrendingUp, Wallet, Bell, MoreHorizontal, User as UserIcon, PieChart as PieIcon } from 'lucide-react';
+import { TrendingUp, Wallet, Bell, PieChart as PieIcon, Sparkles, Clipboard, ChevronRight } from 'lucide-react';
 import { getAllExpenses } from '../lib/db';
 import type { Expense, DashboardStats } from '../types';
 import { useApp } from '../context/AppContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
+import { parseBankNotification } from '../lib/parser';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -20,6 +21,7 @@ const CATEGORY_MAP: Record<string, { icon: string, color: string, name: string }
 
 const Dashboard: React.FC = () => {
     const { preferences, user } = useApp();
+    const navigate = useNavigate();
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -33,14 +35,13 @@ const Dashboard: React.FC = () => {
                 const monthlyExpenses = expenses.filter(e => e.date >= startOfMonth);
                 const totalSpent = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0);
 
-                // Agrupar por categoría
                 const breakdownMap: Record<string, number> = {};
                 monthlyExpenses.forEach(exp => {
                     breakdownMap[exp.categoryId] = (breakdownMap[exp.categoryId] || 0) + exp.amount;
                 });
 
                 const categoryBreakdown = Object.entries(breakdownMap).map(([id, amount]) => {
-                    const catInfo = CATEGORY_MAP[id] || CATEGORY_MAP['6'];
+                    const catInfo = CATEGORY_MAP[id] || { name: 'Otro', icon: '📦', color: '#6366f1' };
                     return {
                         categoryId: id,
                         categoryName: catInfo.name,
@@ -58,7 +59,8 @@ const Dashboard: React.FC = () => {
                     totalSpentMonth: totalSpent,
                     totalSpentToday: expenses.filter(e => {
                         const d = new Date(e.date);
-                        return d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                        const today = new Date();
+                        return d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
                     }).reduce((sum, e) => sum + e.amount, 0),
                     budgetUsedPercent: (preferences.monthlyBudget || 0) > 0 ? (totalSpent / (preferences.monthlyBudget || 1)) * 100 : 0,
                     categoryBreakdown,
@@ -80,6 +82,25 @@ const Dashboard: React.FC = () => {
             currency: preferences.currency,
             maximumFractionDigits: preferences.currency === 'CLP' ? 0 : 2
         }).format(amount);
+    };
+
+    const handleSmartPaste = async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            if (!text) {
+                alert('Portapapeles vacío. Copia una notificación del banco primero.');
+                return;
+            }
+            const data = parseBankNotification(text);
+            if (data && data.amount > 0) {
+                // Navegar al form con los params pre-llenos
+                navigate(`/add?amount=${data.amount}&merchant=${encodeURIComponent(data.merchant)}&source=notification`);
+            } else {
+                alert('No se detectó un gasto en el texto copiado. Prueba copiando la notificación completa.');
+            }
+        } catch (err) {
+            alert('Permiso de portapapeles denegado o no disponible en este navegador.');
+        }
     };
 
     const chartData = {
@@ -113,13 +134,38 @@ const Dashboard: React.FC = () => {
                     <div>
                         <h2 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Cerrar sesión en ajustes</h2>
                         <h1 style={{ fontSize: '1.3rem', fontWeight: 900, letterSpacing: '-0.02em' }}>Hola, {user?.name.split(' ')[0]}</h1>
-                        <p style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 800 }}>VERSION 1.3.0-CHART</p>
+                        <p style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 800 }}>VERSION 1.4.0-MAGIC</p>
                     </div>
                 </div>
                 <button className="premium-card interactive-card" style={{ padding: '0.8rem', borderRadius: '18px', margin: 0 }}>
                     <Bell size={22} color="white" />
                 </button>
             </header>
+
+            {/* Smart Paste Magic Bar */}
+            <div
+                className="premium-card animate-fade-in"
+                style={{
+                    marginBottom: '1.5rem',
+                    padding: '1.2rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    background: 'linear-gradient(90deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%)',
+                    border: '1px solid var(--primary)',
+                    cursor: 'pointer'
+                }}
+                onClick={handleSmartPaste}
+            >
+                <div style={{ width: '40px', height: '40px', background: 'var(--primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Sparkles size={20} color="white" />
+                </div>
+                <div style={{ flex: 1 }}>
+                    <h4 style={{ fontSize: '0.9rem', fontWeight: 800 }}>Cargar Notificación</h4>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Detectar gasto desde el portapapeles</p>
+                </div>
+                <ChevronRight size={18} color="var(--text-secondary)" />
+            </div>
 
             {/* Resumen de Balance */}
             <div className="premium-card gradient-bg" style={{ padding: '2.5rem 2rem', color: 'white', position: 'relative', overflow: 'hidden', marginBottom: '2rem', borderRadius: '30px' }}>
@@ -139,23 +185,16 @@ const Dashboard: React.FC = () => {
                         </div>
                         <span style={{ fontSize: '1rem', fontWeight: 900 }}>{Math.round(stats?.budgetUsedPercent || 0)}%</span>
                     </div>
-                    <p style={{ fontSize: '0.85rem', opacity: 0.8, marginTop: '0.8rem' }}>Presupuesto: {formatCurrency(preferences.monthlyBudget || 0)}</p>
                 </div>
             </div>
 
-            {/* Dos tarjetas de Mini Stats */}
+            {/* Mini Stats Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.2rem', marginBottom: '2.5rem' }}>
                 <div className="premium-card" style={{ padding: '1.2rem', borderBottom: '3px solid var(--success)' }}>
-                    <div style={{ width: '36px', height: '36px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.8rem' }}>
-                        <Wallet size={18} color="var(--success)" />
-                    </div>
                     <p style={{ fontSize: '1.1rem', fontWeight: 900 }}>{formatCurrency(stats?.currentBalance || 0)}</p>
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Saldo Restante</p>
                 </div>
                 <div className="premium-card" style={{ padding: '1.2rem', borderBottom: '3px solid var(--warning)' }}>
-                    <div style={{ width: '36px', height: '36px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.8rem' }}>
-                        <TrendingUp size={18} color="var(--warning)" />
-                    </div>
                     <p style={{ fontSize: '1.1rem', fontWeight: 900 }}>{formatCurrency(stats?.totalSpentToday || 0)}</p>
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Gasto de Hoy</p>
                 </div>
@@ -206,9 +245,9 @@ const Dashboard: React.FC = () => {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {stats?.recentExpenses.map((exp, idx) => {
-                        const cat = CATEGORY_MAP[exp.categoryId] || CATEGORY_MAP['6'];
+                        const cat = CATEGORY_MAP[exp.categoryId] || { icon: '📦', name: 'Otro' };
                         return (
-                            <div key={exp.id || idx} className="premium-card animate-fade-in" style={{ padding: '1.2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div key={exp.id || idx} className="premium-card" style={{ padding: '1.2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                                     <div style={{ width: '44px', height: '44px', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem' }}>
                                         {cat.icon}

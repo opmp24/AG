@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogOut, Shield, Download, Upload, CreditCard, CheckCircle2, User as UserIcon, Lock, Database, Globe, Smartphone, Heart } from 'lucide-react';
+import { LogOut, Shield, Download, Upload, CreditCard, CheckCircle2, User as UserIcon, Lock, Database, Globe, Smartphone, Heart, Wand2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
@@ -210,6 +210,41 @@ const Profile: React.FC = () => {
                                 {saveStatus === 'saving' && 'Procesando...'}
                                 {saveStatus === 'saved' && <><CheckCircle2 size={24} /> ¡Configuración Guardada!</>}
                             </button>
+                        </div>
+                    </section>
+
+                    {/* Simulator Section */}
+                    <section>
+                        <h3 style={{ marginBottom: '1.2rem', fontSize: '1.1rem', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <Wand2 size={22} color="var(--primary)" />
+                            Simulador de Notificaciones
+                        </h3>
+                        <div className="premium-card" style={{ padding: '1.5rem' }}>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1.2rem' }}>Prueba cómo la app detecta montos desde el texto de tu banco.</p>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <button
+                                    className="btn-secondary"
+                                    style={{ textAlign: 'left', fontSize: '0.75rem', padding: '1rem', border: '1px dashed var(--glass-border)' }}
+                                    onClick={() => {
+                                        const text = "Compra por $15.500 en STARBUCKS el 03/03/2026";
+                                        navigator.clipboard.writeText(text);
+                                        alert("Texto de prueba copiado: " + text + "\n\nAhora ve al Inicio y usa 'Cargar Notificación'");
+                                    }}
+                                >
+                                    Copiar Ejemplo: "Compra por $15.500 en STARBUCKS..."
+                                </button>
+                                <button
+                                    className="btn-secondary"
+                                    style={{ textAlign: 'left', fontSize: '0.75rem', padding: '1rem', border: '1px dashed var(--glass-border)' }}
+                                    onClick={() => {
+                                        const text = "Transf. por $5.000 a Juan Perez el 03/03/2026";
+                                        navigator.clipboard.writeText(text);
+                                        alert("Texto de prueba copiado: " + text + "\n\nAhora ve al Inicio y usa 'Cargar Notificación'");
+                                    }}
+                                >
+                                    Copiar Ejemplo: "Transf. por $5.000 a Juan Perez..."
+                                </button>
+                            </div>
                         </div>
                     </section>
 
