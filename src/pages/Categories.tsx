@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { PieChart as PieIcon, Plus, X, Tag, Palette, CheckCircle2 } from 'lucide-react';
-import { getCategories, saveCategory, deleteCategory } from '../lib/db';
+import { PieChart as PieIcon, Plus, X, Tag, Palette, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { getCategories, saveCategory, deleteCategory, getAllExpenses, reassignExpenses } from '../lib/db';
 import type { Category } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -30,7 +30,6 @@ const Categories: React.FC = () => {
     const loadData = async () => {
         let items = await getCategories();
         if (items.length === 0) {
-            // Inicializar con las por defecto si no hay nada
             for (const cat of DEFAULT_CATEGORIES_DATA) {
                 await saveCategory({ ...cat, createdAt: Date.now() });
             }
@@ -65,10 +64,26 @@ const Categories: React.FC = () => {
         setShowModal(true);
     };
 
-    const handleDelete = async (id: string) => {
-        if (window.confirm('¿Quieres eliminar esta categoría? Los gastos asociados podrían quedar sin categoría.')) {
-            await deleteCategory(id);
-            loadData();
+    const handleDelete = async (id: string, name: string) => {
+        const expenses = await getAllExpenses();
+        const associatedCount = expenses.filter(e => e.categoryId === id).length;
+
+        if (associatedCount > 0) {
+            const proceed = window.confirm(
+                `¡Atención! La categoría "${name}" tiene ${associatedCount} gastos asociados.\n\n` +
+                `Si la eliminas, estos gastos se reasignarán automáticamente a la categoría "Otros".\n\n` +
+                `¿Deseas continuar?`
+            );
+            if (proceed) {
+                await reassignExpenses(id, '6'); // ID 6 es "Otros"
+                await deleteCategory(id);
+                loadData();
+            }
+        } else {
+            if (window.confirm(`¿Quieres eliminar la categoría "${name}"?`)) {
+                await deleteCategory(id);
+                loadData();
+            }
         }
     };
 
@@ -83,8 +98,8 @@ const Categories: React.FC = () => {
         <div className="animate-slide-up" style={{ padding: '1.5rem', maxWidth: '600px', margin: '0 auto', paddingBottom: '3rem' }}>
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
                 <div>
-                    <h1 className="gradient-text" style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-0.03em' }}>Mis Categorías</h1>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 500 }}>Clasifica tus gastos del hogar</p>
+                    <h1 className="gradient-text" style={{ fontSize: '2rem', fontWeight: 900 }}>Categorías</h1>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 600 }}>Gestiona la clasificación de tu hogar</p>
                 </div>
                 <button
                     className="fab-button"
@@ -127,15 +142,17 @@ const Categories: React.FC = () => {
                                 </div>
                                 <div>
                                     <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>{cat.name}</span>
-                                    {cat.id.length < 5 && <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 700 }}>PREDETERMINADA</p>}
+                                    {cat.id === '6' && <p style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 800 }}>GENERAL / REASIGNACIÓN</p>}
                                 </div>
                             </div>
-                            <button
-                                onClick={(e) => { e.stopPropagation(); handleDelete(cat.id); }}
-                                style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', opacity: 0.4, cursor: 'pointer' }}
-                            >
-                                <X size={18} />
-                            </button>
+                            {cat.id !== '6' && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleDelete(cat.id, cat.name); }}
+                                    style={{ background: 'transparent', border: 'none', color: '#ff6b6b', opacity: 0.6, cursor: 'pointer' }}
+                                >
+                                    <X size={18} />
+                                </button>
+                            )}
                         </div>
                     ))
                 )}

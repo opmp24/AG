@@ -104,3 +104,24 @@ export async function getCategoryById(id: string): Promise<Category | null> {
     const db = await dbPromise;
     return await db.get('categories', id);
 }
+
+export async function reassignExpenses(oldCategoryId: string, newCategoryId: string): Promise<number> {
+    const db = await dbPromise;
+    const rawExpenses = await db.getAll('expenses');
+    let count = 0;
+
+    for (const item of rawExpenses) {
+        const expense = await decryptData(item.data, item.iv);
+        if (expense && expense.categoryId === oldCategoryId) {
+            expense.categoryId = newCategoryId;
+            const { encrypted, iv } = await encryptData(expense);
+            await db.put('expenses', {
+                ...item,
+                data: encrypted,
+                iv: iv
+            });
+            count++;
+        }
+    }
+    return count;
+}

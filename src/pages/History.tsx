@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getAllExpenses, deleteExpense } from '../lib/db';
 import type { Expense } from '../types';
-import { Trash2, Calendar, ShoppingBag, ChevronLeft, Edit3, CreditCard, Banknote, Landmark } from 'lucide-react';
+import { Trash2, Calendar, ShoppingBag, ChevronLeft, Edit3, CreditCard, Banknote, Landmark, ChevronRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -23,16 +23,24 @@ const PAYMENT_ICON: Record<string, any> = {
 const History: React.FC = () => {
     const [expenses, setExpenses] = useState<Expense[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedDate, setSelectedDate] = useState(new Date());
     const { preferences } = useApp();
     const navigate = useNavigate();
 
     const loadData = async () => {
+        setLoading(true);
         const data = await getAllExpenses();
-        setExpenses(data);
+
+        // Filtrar por el mes seleccionado
+        const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1).getTime();
+        const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0, 23, 59, 59).getTime();
+
+        const filtered = data.filter(e => e.date >= startOfMonth && e.date <= endOfMonth);
+        setExpenses(filtered);
         setLoading(false);
     };
 
-    useEffect(() => { loadData(); }, []);
+    useEffect(() => { loadData(); }, [selectedDate]);
 
     const handleDelete = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
@@ -46,6 +54,12 @@ const History: React.FC = () => {
         navigate(`/edit/${id}`);
     };
 
+    const changeMonth = (offset: number) => {
+        const d = new Date(selectedDate);
+        d.setMonth(d.getMonth() + offset);
+        setSelectedDate(d);
+    };
+
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('es-CL', {
             style: 'currency',
@@ -56,39 +70,41 @@ const History: React.FC = () => {
 
     const formatDate = (timestamp: number) => {
         const d = new Date(timestamp);
-        const now = new Date();
-        const diff = now.getTime() - d.getTime();
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-        if (days === 0) return 'Hoy';
-        if (days === 1) return 'Ayer';
-        if (days < 7) return d.toLocaleDateString('es-ES', { weekday: 'long' });
-        return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+        return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
     };
 
     return (
         <div className="animate-slide-up" style={{ padding: '1.5rem', maxWidth: '600px', margin: '0 auto', paddingBottom: '3rem' }}>
-            <header style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2.5rem' }}>
-                <button
-                    onClick={() => navigate('/')}
-                    style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', padding: '0.6rem', borderRadius: '12px', color: 'white', cursor: 'pointer' }}
-                >
-                    <ChevronLeft size={20} />
-                </button>
-                <h1 className="gradient-text" style={{ fontSize: '1.8rem', fontWeight: 900, letterSpacing: '-0.02em' }}>Mi Actividad</h1>
+            <header style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <button
+                        onClick={() => navigate('/')}
+                        style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', padding: '0.6rem', borderRadius: '12px', color: 'white' }}
+                    >
+                        <ChevronLeft size={20} />
+                    </button>
+                    <h1 className="gradient-text" style={{ fontSize: '1.8rem', fontWeight: 900 }}>Actividad</h1>
+                </div>
+
+                {/* Selector de Mes */}
+                <div className="premium-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem' }}>
+                    <button onClick={() => changeMonth(-1)} style={{ background: 'transparent', border: 'none', color: 'white' }}><ChevronLeft /></button>
+                    <span style={{ fontWeight: 800, textTransform: 'capitalize', fontSize: '1.1rem' }}>
+                        {selectedDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                    </span>
+                    <button onClick={() => changeMonth(1)} style={{ background: 'transparent', border: 'none', color: 'white' }}><ChevronRight /></button>
+                </div>
             </header>
 
             {loading ? (
                 <div style={{ padding: '5rem 0', textAlign: 'center' }}>
                     <div className="spinner" style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 1.5rem' }}></div>
-                    <p style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Cargando movimientos...</p>
                 </div>
             ) : expenses.length === 0 ? (
                 <div className="premium-card" style={{ textAlign: 'center', padding: '5rem 2rem' }}>
                     <ShoppingBag size={64} style={{ color: 'var(--primary)', opacity: 0.2, marginBottom: '1.5rem' }} />
-                    <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '0.5rem' }}>Sin gastos</h2>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '2rem' }}>Aún no has registrado ningún gasto en tu billetera segura.</p>
-                    <button onClick={() => navigate('/add')} className="btn-primary" style={{ width: '100%' }}>Comenzar a registrar</button>
+                    <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '0.5rem' }}>Sin registros</h2>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>No hay gastos en este periodo seleccionado.</p>
                 </div>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
@@ -112,19 +128,16 @@ const History: React.FC = () => {
                             >
                                 <div style={{ display: 'flex', gap: '1.2rem', alignItems: 'center' }}>
                                     <div style={{
-                                        width: '48px',
-                                        height: '48px',
+                                        width: '48px', height: '48px',
                                         background: 'rgba(255,255,255,0.05)',
                                         borderRadius: '16px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         fontSize: '1.5rem'
                                     }}>
                                         {category.icon}
                                     </div>
                                     <div>
-                                        <p style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.01em' }}>{exp.description}</p>
+                                        <p style={{ fontWeight: 800, fontSize: '1rem' }}>{exp.description}</p>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '0.2rem', fontWeight: 600 }}>
                                             <Calendar size={12} />
                                             <span>{formatDate(exp.date)}</span>
@@ -135,34 +148,10 @@ const History: React.FC = () => {
                                     </div>
                                 </div>
                                 <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-                                    <p style={{ fontWeight: 900, color: '#ff6b6b', fontSize: '1.1rem' }}>- {formatCurrency(exp.amount)}</p>
+                                    <p style={{ fontWeight: 900, color: '#ff4d4d', fontSize: '1.1rem' }}>- {formatCurrency(exp.amount)}</p>
                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); handleEdit(exp.id); }}
-                                            style={{
-                                                background: 'rgba(99, 102, 241, 0.1)',
-                                                border: 'none',
-                                                padding: '0.5rem',
-                                                borderRadius: '10px',
-                                                color: 'var(--primary)',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            <Edit3 size={16} />
-                                        </button>
-                                        <button
-                                            onClick={(e) => handleDelete(e, exp.id)}
-                                            style={{
-                                                background: 'rgba(255, 77, 77, 0.1)',
-                                                border: 'none',
-                                                padding: '0.5rem',
-                                                borderRadius: '10px',
-                                                color: '#ff6b6b',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
+                                        <button onClick={(e) => { e.stopPropagation(); handleEdit(exp.id); }} style={{ background: 'rgba(99,102,241,0.1)', border: 'none', padding: '0.5rem', borderRadius: '10px', color: 'var(--primary)' }}><Edit3 size={16} /></button>
+                                        <button onClick={(e) => handleDelete(e, exp.id)} style={{ background: 'rgba(255, 77, 77, 0.1)', border: 'none', padding: '0.5rem', borderRadius: '10px', color: '#ff4d4d' }}><Trash2 size={16} /></button>
                                     </div>
                                 </div>
                             </div>
