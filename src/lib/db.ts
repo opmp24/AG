@@ -94,3 +94,13 @@ export async function getCategories(): Promise<Category[]> {
     const db = await dbPromise;
     return await db.getAll('categories');
 }
+
+export async function deleteCategory(id: string): Promise<void> {
+    const db = await dbPromise;
+    await db.delete('categories', id);
+}
+
+export async function getCategoryById(id: string): Promise<Category | null> {
+    const db = await dbPromise;
+    return await db.get('categories', id);
+}
