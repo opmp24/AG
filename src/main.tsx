@@ -3,17 +3,11 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 
-// Registro del Service Worker para PWA
+import { registerSW } from 'virtual:pwa-register';
+
+// Registro del Service Worker para PWA gestionado por vite-plugin-pwa
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js', { scope: '/' })
-            .then(registration => {
-                console.log('SW registrado con éxito:', registration.scope);
-            })
-            .catch(error => {
-                console.log('Error al registrar SW:', error);
-            });
-    });
+    registerSW({ immediate: true });
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

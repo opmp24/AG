@@ -12,6 +12,7 @@ const Profile: React.FC = () => {
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
     const [tempBudget, setTempBudget] = useState(preferences.monthlyBudget.toString());
     const [tempCycle, setTempCycle] = useState((preferences.billingCycleStartDay || 1).toString());
+    const [tempCurrency, setTempCurrency] = useState(preferences.currency || 'CLP');
 
     // PWA Install state
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -39,7 +40,8 @@ const Profile: React.FC = () => {
         setSaveStatus('saving');
         updatePreferences({
             monthlyBudget: Number(tempBudget),
-            billingCycleStartDay: Number(tempCycle)
+            billingCycleStartDay: Number(tempCycle),
+            currency: tempCurrency as any
         });
         setTimeout(() => {
             setSaveStatus('saved');
@@ -197,7 +199,21 @@ const Profile: React.FC = () => {
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Presupuesto Mensual</label>
-                                <input type="number" className="form-input" value={tempBudget} onChange={(e) => setTempBudget(e.target.value)} style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary)' }} />
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <select
+                                        className="form-input"
+                                        value={tempCurrency}
+                                        onChange={(e) => setTempCurrency(e.target.value as any)}
+                                        style={{ width: '100px', fontSize: '1.1rem', fontWeight: 800, padding: '0.8rem' }}
+                                    >
+                                        <option value="CLP">CLP $</option>
+                                        <option value="USD">USD $</option>
+                                        <option value="ARS">ARS $</option>
+                                        <option value="EUR">EUR €</option>
+                                        <option value="MXN">MXN $</option>
+                                    </select>
+                                    <input type="number" className="form-input" value={tempBudget} onChange={(e) => setTempBudget(e.target.value)} style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary)', flex: 1 }} />
+                                </div>
                             </div>
                             <button className="btn-primary" onClick={handleSavePreferences} disabled={saveStatus === 'saving'}>
                                 {saveStatus === 'saved' ? <><CheckCircle2 size={20} /> ¡Guardado!</> : <><Save size={20} /> Guardar Configuración</>}
