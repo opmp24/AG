@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { TrendingUp, Wallet, Bell, PieChart as PieIcon, Sparkles, ChevronRight, BarChart3, ChevronLeft, Calendar, LayoutGrid, AlertCircle, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { getAllExpenses, getAllScheduledExpenses } from '../lib/db';
-import type { Expense, ScheduledExpense } from '../types';
+import { getAllExpenses, getAllScheduledExpenses, getCategories } from '../lib/db';
+import type { Expense, ScheduledExpense, Category } from '../types';
 import { useApp } from '../context/AppContext';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -13,15 +13,15 @@ import { getBillingPeriodRange, formatPeriodName } from '../lib/periods';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
-const CATEGORY_MAP: Record<string, { icon: string, color: string, name: string }> = {
-    '1': { name: 'Alimentación', icon: '🍎', color: '#ef4444' },
-    '2': { name: 'Vivienda', icon: '🏠', color: '#3b82f6' },
-    '3': { name: 'Transporte', icon: '🚗', color: '#10b981' },
-    '4': { name: 'Ocio', icon: '🍿', color: '#f59e0b' },
-    '5': { name: 'Salud', icon: '⚕️', color: '#ec4899' },
-    '6': { name: 'Otros', icon: '📦', color: '#6366f1' },
-    '7': { name: 'Pagos', icon: '💸', color: '#8b5cf6' },
-};
+const DEFAULT_CATEGORIES = [
+    { id: '1', name: 'Alimentación', icon: '🍎', color: '#ef4444' },
+    { id: '2', name: 'Vivienda', icon: '🏠', color: '#3b82f6' },
+    { id: '3', name: 'Transporte', icon: '🚗', color: '#10b981' },
+    { id: '4', name: 'Ocio', icon: '🍿', color: '#f59e0b' },
+    { id: '5', name: 'Salud', icon: '⚕️', color: '#ec4899' },
+    { id: '6', name: 'Otros', icon: '📦', color: '#6366f1' },
+    { id: '7', name: 'Pagos', icon: '💸', color: '#8b5cf6' },
+];
 
 const Dashboard: React.FC = () => {
     const { preferences, user } = useApp();
@@ -37,11 +37,14 @@ const Dashboard: React.FC = () => {
     // Pending State
     const [pendingTotal, setPendingTotal] = useState(0);
     const [pendingCount, setPendingCount] = useState(0);
+    const [categories, setCategories] = useState<Category[]>([]);
 
     const loadData = async () => {
         try {
             const expenses = await getAllExpenses();
             const scheduled = await getAllScheduledExpenses();
+            const cats = await getCategories();
+            setCategories(cats.length > 0 ? cats : DEFAULT_CATEGORIES as Category[]);
 
             // Pending summary
             setPendingCount(scheduled.length);
@@ -89,7 +92,7 @@ const Dashboard: React.FC = () => {
     });
 
     const categoryBreakdown = Object.entries(breakdownMap).map(([id, amount]) => {
-        const catInfo = CATEGORY_MAP[id] || { name: 'Otro', icon: '📦', color: '#6366f1' };
+        const catInfo = categories.find(c => c.id === id) || { name: 'Otro', icon: '📦', color: '#6366f1' };
         return { name: catInfo.name, color: catInfo.color, total: amount, percent: totalSpentThisMonth > 0 ? (amount / totalSpentThisMonth) * 100 : 0 };
     }).sort((a, b) => b.total - a.total);
 
@@ -274,9 +277,9 @@ const Dashboard: React.FC = () => {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
                 {currentMonthExpenses.slice(0, 4).map((exp, i) => {
-                    const cat = CATEGORY_MAP[exp.categoryId] || { icon: '📦', color: '#6366f1' };
+                    const cat = categories.find(c => c.id === exp.categoryId) || { icon: '📦', color: '#6366f1' };
                     return (
-                        <div key={exp.id || i} className="premium-card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div key={exp.id || i} className="premium-card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: `4px solid ${cat.color}` }}>
                             <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
                                 <div style={{ fontSize: '1.1rem', padding: '0.4rem', background: 'var(--glass)', borderRadius: '10px' }}>{cat.icon}</div>
                                 <div>

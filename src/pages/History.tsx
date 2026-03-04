@@ -1,20 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { getAllExpenses, deleteExpense } from '../lib/db';
-import type { Expense } from '../types';
+import { getAllExpenses, deleteExpense, getCategories } from '../lib/db';
+import type { Expense, Category } from '../types';
 import { Trash2, Calendar, ShoppingBag, ChevronLeft, Edit3, CreditCard, Banknote, Landmark, ChevronRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { getBillingPeriodRange, formatPeriodName } from '../lib/periods';
 
-const CATEGORY_MAP: Record<string, { icon: string, color: string, name: string }> = {
-    '1': { name: 'Alimentación', icon: '🍎', color: '#ef4444' },
-    '2': { name: 'Vivienda', icon: '🏠', color: '#3b82f6' },
-    '3': { name: 'Transporte', icon: '🚗', color: '#10b981' },
-    '4': { name: 'Ocio', icon: '🍿', color: '#f59e0b' },
-    '5': { name: 'Salud', icon: '⚕️', color: '#ec4899' },
-    '6': { name: 'Otros', icon: '📦', color: '#6366f1' },
-    '7': { name: 'Pagos', icon: '💸', color: '#8b5cf6' },
-};
+const DEFAULT_CATEGORIES = [
+    { id: '1', name: 'Alimentación', icon: '🍎', color: '#ef4444' },
+    { id: '2', name: 'Vivienda', icon: '🏠', color: '#3b82f6' },
+    { id: '3', name: 'Transporte', icon: '🚗', color: '#10b981' },
+    { id: '4', name: 'Ocio', icon: '🍿', color: '#f59e0b' },
+    { id: '5', name: 'Salud', icon: '⚕️', color: '#ec4899' },
+    { id: '6', name: 'Otros', icon: '📦', color: '#6366f1' },
+    { id: '7', name: 'Pagos', icon: '💸', color: '#8b5cf6' },
+];
 
 const PAYMENT_ICON: Record<string, any> = {
     'efectivo': Banknote,
@@ -28,6 +28,7 @@ const History: React.FC = () => {
 
     const [periodOffset, setPeriodOffset] = useState(0);
     const [expenses, setExpenses] = useState<Expense[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [periodRange, setPeriodRange] = useState({ start: 0, end: 0 });
 
@@ -43,6 +44,8 @@ const History: React.FC = () => {
 
         const filtered = data.filter(e => e.date >= range.start && e.date <= range.end);
         setExpenses(filtered);
+        const cats = await getCategories();
+        setCategories(cats.length > 0 ? cats : DEFAULT_CATEGORIES as Category[]);
         setLoading(false);
     };
 
@@ -107,7 +110,7 @@ const History: React.FC = () => {
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
                     {expenses.map((exp, idx) => {
-                        const category = CATEGORY_MAP[exp.categoryId] || CATEGORY_MAP['6'];
+                        const category = categories.find(c => c.id === exp.categoryId) || { icon: '📦', color: '#6366f1', name: 'Otro' };
                         const PayIcon = PAYMENT_ICON[exp.paymentMethod || 'efectivo'];
 
                         return (
