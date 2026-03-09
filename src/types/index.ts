@@ -18,6 +18,7 @@ export interface Category {
     isDefault?: boolean;
     createdAt: number;
     monthlyLimit?: number; // Presupuesto por categoría (Sobres)
+    isLimitActive?: boolean;
 }
 
 /** Financial expense record */

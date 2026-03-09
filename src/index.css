@@ -15,12 +15,12 @@
     --bg-dark: #0f111a;
     --card-dark: #1e2133;
     --text-primary: #ffffff;
-    --text-secondary: #94a3b8;
-    --glass: rgba(255, 255, 255, 0.05);
-    --glass-border: rgba(255, 255, 255, 0.12);
+    --text-secondary: #f1f5f9;
+    --glass: rgba(0, 0, 0, 0.2);
+    --glass-border: rgba(0, 0, 0, 0.3);
     --background: #0f111a;
-    --gradient-radial: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
-        radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.08) 0%, transparent 50%);
+    --gradient-radial: radial-gradient(circle at 10% 20%, rgba(0, 0, 0, 0.2) 0%, transparent 50%),
+        radial-gradient(circle at 90% 80%, rgba(0, 0, 0, 0.2) 0%, transparent 50%);
 }
 
 .theme-light {
@@ -88,6 +88,7 @@ body {
     line-height: 1.5;
     overflow-x: hidden;
     min-height: 100vh;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
     transition: background-color var(--transition), color var(--transition);
 }
 

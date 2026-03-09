@@ -301,28 +301,28 @@ const Dashboard: React.FC = () => {
             )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 900 }}>Mis Sobrecitos</h3>
+                <h3 style={{ fontSize: '1rem', fontWeight: 900 }}>Micro-presupuestos</h3>
                 <Link to="/categories" style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 800 }}>Gestionar</Link>
             </div>
 
             {/* Gráfico comparativo: Gasto vs Presupuesto */}
-            {categoryBreakdown.filter(c => c.total > 0 || c.limit).length > 0 && (
+            {categoryBreakdown.filter(c => (c.total > 0) || (c.limit)).length > 0 && (
                 <div className="premium-card" style={{ padding: '1.2rem', marginBottom: '1.5rem', overflow: 'hidden' }}>
                     <div style={{ width: '100%', overflowX: 'auto', paddingBottom: '0.5rem' }}>
-                        <div style={{ minWidth: `${Math.max(300, categoryBreakdown.filter(c => c.total > 0 || c.limit).length * 80)}px`, height: '220px' }}>
+                        <div style={{ minWidth: `${Math.max(300, categoryBreakdown.filter(c => (c.total > 0) || (c.limit)).length * 80)}px`, height: '220px' }}>
                             <Bar
                                 data={{
-                                    labels: categoryBreakdown.filter(c => c.total > 0 || c.limit).map(c => c.name),
+                                    labels: categoryBreakdown.filter(c => (c.total > 0) || (c.limit)).map(c => c.name),
                                     datasets: [
                                         {
                                             label: 'Gasto',
-                                            data: categoryBreakdown.filter(c => c.total > 0 || c.limit).map(c => c.total),
+                                            data: categoryBreakdown.filter(c => (c.total > 0) || (c.limit)).map(c => c.total),
                                             backgroundColor: '#ff4d4d',
                                             borderRadius: 4
                                         },
                                         {
                                             label: 'Presupuesto',
-                                            data: categoryBreakdown.filter(c => c.total > 0 || c.limit).map(c => c.limit || 0),
+                                            data: categoryBreakdown.filter(c => (c.total > 0) || (c.limit)).map(c => c.limit || 0),
                                             backgroundColor: '#10b981',
                                             borderRadius: 4
                                         }
@@ -353,6 +353,8 @@ const Dashboard: React.FC = () => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', marginBottom: '2rem' }}>
                 {categoryBreakdown.filter(c => c.limit).map(c => {
+                    const isActiveLimit = categories.find(cat => cat.id === c.id)?.isLimitActive !== false;
+                    if (!isActiveLimit) return null;
                     const percent = Math.min((c.total / c.limit!) * 100, 100);
                     const isOver = c.total > c.limit!;
                     return (
@@ -373,10 +375,10 @@ const Dashboard: React.FC = () => {
                         </div>
                     );
                 })}
-                {categoryBreakdown.filter(c => c.limit).length === 0 && (
+                {categoryBreakdown.filter(c => c.limit && categories.find(cat => cat.id === c.id)?.isLimitActive !== false).length === 0 && (
                     <div className="premium-card" style={{ padding: '1.5rem', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderStyle: 'dashed' }}>
                         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No tienes límites por categoría asignados.</p>
-                        <Link to="/categories" style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 800, textDecoration: 'none', display: 'block', marginTop: '0.5rem' }}>+ CONFIGURAR SOBRECITOS</Link>
+                        <Link to="/categories" style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 800, textDecoration: 'none', display: 'block', marginTop: '0.5rem' }}>+ CONFIGURAR MICRO-PRESUPUESTOS</Link>
                     </div>
                 )}
             </div>
@@ -420,29 +422,6 @@ const Dashboard: React.FC = () => {
                     })}
                 </div>
             )}
-
-            {/* Recent Activity */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 900 }}>Actividad del Ciclo</h3>
-                <Link to="/history" style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 800 }}>Ver todo</Link>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                {currentMonthExpenses.slice(0, 4).map((exp, i) => {
-                    const cat = categories.find(c => c.id === exp.categoryId) || { icon: '📦', color: '#6366f1' };
-                    return (
-                        <div key={exp.id || i} className="premium-card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: `4px solid ${cat.color}` }}>
-                            <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
-                                <div style={{ fontSize: '1.1rem', padding: '0.4rem', background: 'var(--glass)', borderRadius: '10px' }}>{cat.icon}</div>
-                                <div>
-                                    <p style={{ fontSize: '0.85rem', fontWeight: 800 }}>{exp.description}</p>
-                                    <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 700 }}>{new Date(exp.date).toLocaleDateString()}</p>
-                                </div>
-                            </div>
-                            <p style={{ color: '#ff4d4d', fontWeight: 900, fontSize: '0.95rem' }}>- {formatCurrency(exp.amount)}</p>
-                        </div>
-                    )
-                })}
-            </div>
         </div>
     );
 };

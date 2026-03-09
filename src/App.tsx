@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Plus, List, Settings, PieChart, CalendarCheck } from 'lucide-react';
+import { LayoutDashboard, Plus, List, Settings, PieChart, CalendarCheck, Target } from 'lucide-react';
 import { AppProvider, useApp } from './context/AppContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
@@ -47,29 +47,37 @@ const AppContent: React.FC = () => {
                 </Suspense>
             </main>
 
-            <nav className="bottom-nav">
+            <nav className="bottom-nav" style={{ padding: '0 0.5rem 1.5rem 0.5rem' }}>
                 <NavLink to="/" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <LayoutDashboard size={24} />
-                    <span>Inicio</span>
+                    <LayoutDashboard size={22} />
+                    <span style={{ fontSize: '0.65rem' }}>Inicio</span>
                 </NavLink>
                 <NavLink to="/history" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <List size={24} />
-                    <span>Historial</span>
+                    <List size={22} />
+                    <span style={{ fontSize: '0.65rem' }}>Historial</span>
+                </NavLink>
+                <NavLink to="/categories" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                    <PieChart size={22} />
+                    <span style={{ fontSize: '0.65rem' }}>Mini $</span>
                 </NavLink>
 
                 <div className="fab-container">
-                    <NavLink to="/add" className="fab-button">
-                        <Plus size={32} />
+                    <NavLink to="/add" className="fab-button" style={{ width: '55px', height: '55px', borderRadius: '18px' }}>
+                        <Plus size={28} />
                     </NavLink>
                 </div>
 
+                <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                    <Target size={22} />
+                    <span style={{ fontSize: '0.65rem' }}>Metas</span>
+                </NavLink>
                 <NavLink to="/scheduled" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <CalendarCheck size={24} />
-                    <span>Pagos</span>
+                    <CalendarCheck size={22} />
+                    <span style={{ fontSize: '0.65rem' }}>Pagos</span>
                 </NavLink>
                 <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <Settings size={24} />
-                    <span>Ajustes</span>
+                    <Settings size={22} />
+                    <span style={{ fontSize: '0.65rem' }}>Ajustes</span>
                 </NavLink>
             </nav>
         </div>

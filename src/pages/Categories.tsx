@@ -29,6 +29,7 @@ const Categories: React.FC = () => {
     const [icon, setIcon] = useState('📦');
     const [color, setColor] = useState('#6366f1');
     const [monthlyLimit, setMonthlyLimit] = useState('');
+    const [isLimitActive, setIsLimitActive] = useState(true);
     const { preferences } = useApp();
 
     const loadData = async () => {
@@ -53,6 +54,7 @@ const Categories: React.FC = () => {
             icon,
             color,
             monthlyLimit: monthlyLimit ? Number(monthlyLimit) : undefined,
+            isLimitActive,
             createdAt: editingCategory?.createdAt || Date.now()
         };
         await saveCategory(newCat);
@@ -67,6 +69,7 @@ const Categories: React.FC = () => {
         setIcon(cat.icon);
         setColor(cat.color);
         setMonthlyLimit(cat.monthlyLimit?.toString() || '');
+        setIsLimitActive(cat.isLimitActive !== false);
         setShowModal(true);
     };
 
@@ -99,13 +102,14 @@ const Categories: React.FC = () => {
         setIcon('📦');
         setColor('#6366f1');
         setMonthlyLimit('');
+        setIsLimitActive(true);
     };
 
     return (
         <div className="animate-slide-up" style={{ padding: '1.5rem', maxWidth: '600px', margin: '0 auto', paddingBottom: '3rem' }}>
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
                 <div>
-                    <h1 className="gradient-text" style={{ fontSize: '2rem', fontWeight: 900 }}>Categorías</h1>
+                    <h1 className="gradient-text" style={{ fontSize: '2rem', fontWeight: 900 }}>Micro-presupuestos</h1>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 600 }}>Gestiona la clasificación de tu hogar</p>
                 </div>
                 <button
@@ -151,7 +155,7 @@ const Categories: React.FC = () => {
                                     <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>{cat.name}</span>
                                     {cat.monthlyLimit && (
                                         <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
-                                            Presupuesto: {new Intl.NumberFormat('es-CL', { style: 'currency', currency: preferences.currency }).format(cat.monthlyLimit)}
+                                            {cat.isLimitActive === false ? '⏸️ Inactivo - ' : ''}Presupuesto: {new Intl.NumberFormat('es-CL', { style: 'currency', currency: preferences.currency }).format(cat.monthlyLimit)}
                                         </p>
                                     )}
                                     {cat.id === '6' && <p style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 800 }}>GENERAL / REASIGNACIÓN</p>}
@@ -216,7 +220,16 @@ const Categories: React.FC = () => {
                                     />
                                     <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontWeight: 900 }}>$</span>
                                 </div>
-                                <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>Asigna un límite de gasto a este "Sobrecito".</p>
+                                <div style={{ display: 'flex', alignItems: 'center', marginTop: '0.5rem', gap: '0.5rem' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={isLimitActive}
+                                        onChange={(e) => setIsLimitActive(e.target.checked)}
+                                        style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+                                    />
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Activo (mostrar en todos los ciclos)</span>
+                                </div>
+                                <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>Asigna un límite de gasto a este "Micro-presupuesto".</p>
                             </div>
 
                             <div>
