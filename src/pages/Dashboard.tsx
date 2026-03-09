@@ -300,11 +300,57 @@ const Dashboard: React.FC = () => {
                 </div>
             )}
 
-            {/* Envelopes (Sobrecitos) Tracking */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                 <h3 style={{ fontSize: '1rem', fontWeight: 900 }}>Mis Sobrecitos</h3>
                 <Link to="/categories" style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 800 }}>Gestionar</Link>
             </div>
+
+            {/* Gráfico comparativo: Gasto vs Presupuesto */}
+            {categoryBreakdown.filter(c => c.total > 0 || c.limit).length > 0 && (
+                <div className="premium-card" style={{ padding: '1.2rem', marginBottom: '1.5rem', overflow: 'hidden' }}>
+                    <div style={{ width: '100%', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+                        <div style={{ minWidth: `${Math.max(300, categoryBreakdown.filter(c => c.total > 0 || c.limit).length * 80)}px`, height: '220px' }}>
+                            <Bar
+                                data={{
+                                    labels: categoryBreakdown.filter(c => c.total > 0 || c.limit).map(c => c.name),
+                                    datasets: [
+                                        {
+                                            label: 'Gasto',
+                                            data: categoryBreakdown.filter(c => c.total > 0 || c.limit).map(c => c.total),
+                                            backgroundColor: '#ff4d4d',
+                                            borderRadius: 4
+                                        },
+                                        {
+                                            label: 'Presupuesto',
+                                            data: categoryBreakdown.filter(c => c.total > 0 || c.limit).map(c => c.limit || 0),
+                                            backgroundColor: '#10b981',
+                                            borderRadius: 4
+                                        }
+                                    ]
+                                }}
+                                options={{
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { display: true, position: 'top', labels: { color: 'var(--text-primary)', font: { size: 10, weight: 'bold' } } }
+                                    },
+                                    scales: {
+                                        y: {
+                                            ticks: { color: 'var(--text-secondary)', font: { size: 9, weight: 'bold' } },
+                                            grid: { color: 'rgba(255,255,255,0.05)' }
+                                        },
+                                        x: {
+                                            ticks: { color: 'var(--text-primary)', font: { size: 10, weight: 'bold' } },
+                                            grid: { display: false }
+                                        }
+                                    }
+                                }}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', marginBottom: '2rem' }}>
                 {categoryBreakdown.filter(c => c.limit).map(c => {
                     const percent = Math.min((c.total / c.limit!) * 100, 100);

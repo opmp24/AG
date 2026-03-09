@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LogOut, Shield, Download, Upload, CreditCard, CheckCircle2, User as UserIcon, Lock, Database, Globe, Smartphone, Heart, Wand2, Plus, Calendar, Save, FileText, AlertCircle, ShoppingCart, TrendingDown, ChevronRight, Share, Box, PieChart, X } from 'lucide-react';
+import { LogOut, Shield, Download, Upload, CreditCard, CheckCircle2, User as UserIcon, Lock, Database, Globe, Smartphone, Heart, Wand2, Plus, Calendar, Save, FileText, AlertCircle, ShoppingCart, TrendingDown, ChevronRight, Share, Box, PieChart, X, Edit2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
@@ -24,6 +24,7 @@ const Profile: React.FC = () => {
     const [importResult, setImportResult] = useState<{ count: number, total: number } | null>(null);
     const [savingGoals, setSavingGoals] = useState<import('../types').SavingGoal[]>([]);
     const [showGoalModal, setShowGoalModal] = useState(false);
+    const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
     const [newGoal, setNewGoal] = useState({ name: '', target: '', current: '', icon: '💰', color: '#10b981' });
 
     useEffect(() => {
@@ -43,7 +44,7 @@ const Profile: React.FC = () => {
     const handleAddGoal = async () => {
         const { saveSavingGoal } = await import('../lib/db');
         const goal: import('../types').SavingGoal = {
-            id: uuidv4(),
+            id: editingGoalId || uuidv4(),
             name: newGoal.name,
             targetAmount: Number(newGoal.target),
             currentAmount: Number(newGoal.current),
@@ -52,9 +53,26 @@ const Profile: React.FC = () => {
             createdAt: Date.now()
         };
         await saveSavingGoal(goal);
-        setSavingGoals([...savingGoals, goal]);
+        if (editingGoalId) {
+            setSavingGoals(savingGoals.map(g => g.id === editingGoalId ? goal : g));
+        } else {
+            setSavingGoals([...savingGoals, goal]);
+        }
         setShowGoalModal(false);
         setNewGoal({ name: '', target: '', current: '', icon: '💰', color: '#10b981' });
+        setEditingGoalId(null);
+    };
+
+    const handleEditGoal = (goal: typeof savingGoals[0]) => {
+        setNewGoal({
+            name: goal.name,
+            target: goal.targetAmount.toString(),
+            current: goal.currentAmount.toString(),
+            icon: goal.icon,
+            color: goal.color
+        });
+        setEditingGoalId(goal.id);
+        setShowGoalModal(true);
     };
 
     const handleDeleteGoal = async (id: string) => {
@@ -403,7 +421,10 @@ const Profile: React.FC = () => {
                                             <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Faltan: ${(goal.targetAmount - goal.currentAmount).toLocaleString()}</p>
                                         </div>
                                     </div>
-                                    <button onClick={() => handleDeleteGoal(goal.id)} style={{ background: 'transparent', border: 'none', color: 'var(--danger)' }}><X size={18} /></button>
+                                    <div style={{ display: 'flex', gap: '0.8rem' }}>
+                                        <button onClick={() => handleEditGoal(goal)} style={{ background: 'transparent', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}><Edit2 size={18} /></button>
+                                        <button onClick={() => handleDeleteGoal(goal.id)} style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><X size={18} /></button>
+                                    </div>
                                 </div>
                             ))}
                             <button className="btn-secondary" style={{ borderStyle: 'dashed' }} onClick={() => setShowGoalModal(true)}>

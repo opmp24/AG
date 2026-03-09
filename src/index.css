@@ -98,7 +98,8 @@ body {
 .theme-nature,
 .theme-ocean,
 .theme-sunset {
-    background-image: var(--gradient-radial);
+    background-image: none;
+    background-color: dimgrey;
 }
 
 /* Layout */
