@@ -13,7 +13,7 @@ export default defineConfig({
                 name: 'Gastop - Control de Gastos',
                 short_name: 'Gastop',
                 description: 'Gestión y control de gastos del hogar con privacidad total',
-                theme_color: '#6366f1',
+                theme_color: '#4ade80',
                 background_color: '#0f0f23',
                 display: 'standalone',
                 orientation: 'portrait-primary',
