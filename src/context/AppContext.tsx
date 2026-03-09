@@ -9,6 +9,8 @@ interface AppContextType {
     logout: () => void;
     updatePreferences: (prefs: Partial<UserPreferences>) => void;
     isOnline: boolean;
+    deferredPrompt: any;
+    installPwa: () => void;
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -29,6 +31,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const [user, setUser] = useState<UserProfile | null>(null);
     const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
     const [isOnline, setIsOnline] = useState(navigator.onLine);
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
     useEffect(() => {
         // Cargar sesión local si existe
@@ -42,11 +45,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const handleOnline = () => setIsOnline(true);
         const handleOffline = () => setIsOnline(false);
         window.addEventListener('online', handleOnline);
-        window.addEventListener('offline', handleOffline);
+        // PWA Install listener global
+        const handleBeforeInstallPrompt = (e: Event) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+        };
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
         return () => {
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
         };
     }, []);
 
@@ -67,6 +76,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         localStorage.setItem('hs_prefs', JSON.stringify(updated));
     };
 
+    const installPwa = async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                setDeferredPrompt(null);
+            }
+        }
+    };
+
     return (
         <AppContext.Provider value={{
             user,
@@ -75,7 +94,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             login,
             logout,
             updatePreferences,
-            isOnline
+            isOnline,
+            deferredPrompt,
+            installPwa
         }}>
             {children}
         </AppContext.Provider>

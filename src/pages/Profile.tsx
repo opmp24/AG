@@ -8,15 +8,12 @@ import { saveExpense } from '../lib/db';
 import { v4 as uuidv4 } from 'uuid';
 
 const Profile: React.FC = () => {
-    const { user, login, logout, isAuthenticated, preferences, updatePreferences } = useApp();
+    const { user, login, logout, isAuthenticated, preferences, updatePreferences, deferredPrompt, installPwa } = useApp();
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
     const [tempBudget, setTempBudget] = useState(preferences.monthlyBudget.toString());
     const [tempCycle, setTempCycle] = useState((preferences.billingCycleStartDay || 1).toString());
     const [tempCurrency, setTempCurrency] = useState(preferences.currency || 'CLP');
     const [tempTheme, setTempTheme] = useState(preferences.theme || 'system');
-
-    // PWA Install state
-    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
     // Bulk Import State
     const [bulkText, setBulkText] = useState('');
@@ -28,11 +25,6 @@ const Profile: React.FC = () => {
     const [newGoal, setNewGoal] = useState({ name: '', target: '', current: '', icon: '💰', color: '#10b981' });
 
     useEffect(() => {
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            setDeferredPrompt(e);
-        });
-
         const loadGoals = async () => {
             const { getAllSavingGoals } = await import('../lib/db');
             const goals = await getAllSavingGoals();
@@ -102,14 +94,6 @@ const Profile: React.FC = () => {
             setSaveStatus('saved');
             setTimeout(() => setSaveStatus('idle'), 3000);
         }, 800);
-    };
-
-    const handleInstallClick = async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') setDeferredPrompt(null);
-        }
     };
 
     const handleBulkImport = async () => {
@@ -211,7 +195,7 @@ const Profile: React.FC = () => {
                         <div style={{ marginBottom: '2rem' }}>
                             <p style={{ fontSize: '0.85rem', fontWeight: 800, color: 'white', marginBottom: '0.8rem' }}>Android / PC Chrome:</p>
                             {deferredPrompt ? (
-                                <button className="btn-primary" onClick={handleInstallClick} style={{ width: '100%', background: 'var(--primary)', height: '55px' }}>
+                                <button className="btn-primary" onClick={installPwa} style={{ width: '100%', background: 'var(--primary)', height: '55px' }}>
                                     <Smartphone size={20} /> Instalar Aplicación Directo
                                 </button>
                             ) : (
