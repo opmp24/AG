@@ -106,12 +106,18 @@ const Profile: React.FC = () => {
 
             let totalImportedAmount = 0;
             for (const item of detections) {
+                // Aplicar aprendizaje local si existe
+                let finalCategoryId = item.categoryId || '6';
+                if (item.merchant && preferences.autoCategorization?.[item.merchant.toLowerCase()]) {
+                    finalCategoryId = preferences.autoCategorization[item.merchant.toLowerCase()];
+                }
+
                 await saveExpense({
                     id: uuidv4(),
                     amount: item.amount,
                     currency: preferences.currency,
                     description: item.merchant,
-                    categoryId: item.categoryId || '6',
+                    categoryId: finalCategoryId,
                     date: Date.now(),
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
@@ -255,17 +261,24 @@ const Profile: React.FC = () => {
                             <div className="form-group">
                                 <label className="form-label">Tema Visual</label>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
-                                    {['system', 'light', 'dark'].map(t => (
+                                    {[
+                                        { id: 'system', icon: '💻' },
+                                        { id: 'light', icon: '☀️' },
+                                        { id: 'dark', icon: '🌙' },
+                                        { id: 'nature', icon: '🌿' },
+                                        { id: 'ocean', icon: '🌊' },
+                                        { id: 'sunset', icon: '🌇' }
+                                    ].map(t => (
                                         <button
-                                            key={t}
-                                            onClick={() => setTempTheme(t as any)}
+                                            key={t.id}
+                                            onClick={() => setTempTheme(t.id as any)}
                                             style={{
-                                                padding: '0.8rem', borderRadius: '12px', border: tempTheme === t ? '2px solid var(--primary)' : '1px solid var(--glass-border)',
-                                                background: tempTheme === t ? 'var(--primary)' : 'var(--glass)', color: tempTheme === t ? 'white' : 'var(--text-secondary)',
-                                                fontWeight: 800, textTransform: 'capitalize', cursor: 'pointer'
+                                                padding: '0.8rem', borderRadius: '12px', border: tempTheme === t.id ? '2px solid var(--primary)' : '1px solid var(--glass-border)',
+                                                background: tempTheme === t.id ? 'var(--primary)' : 'var(--glass)', color: tempTheme === t.id ? 'white' : 'var(--text-secondary)',
+                                                fontWeight: 800, textTransform: 'capitalize', cursor: 'pointer', fontSize: '0.75rem'
                                             }}
                                         >
-                                            {t === 'system' ? '💻' : t === 'light' ? '☀️' : '🌙'} {t}
+                                            {t.icon} {t.id}
                                         </button>
                                     ))}
                                 </div>
@@ -324,6 +337,22 @@ const Profile: React.FC = () => {
                                 }}
                             >
                                 <Download size={20} /> Exportar Backup (JSON)
+                            </button>
+                            <button
+                                className="btn-secondary"
+                                style={{ width: '100%', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', border: '1px solid var(--success)' }}
+                                onClick={async () => {
+                                    const { exportToCSV } = await import('../lib/db');
+                                    const csv = await exportToCSV();
+                                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `gastos_hogarsafe_${new Date().toISOString().split('T')[0]}.csv`;
+                                    a.click();
+                                }}
+                            >
+                                <FileText size={20} /> Exportar a Excel (CSV)
                             </button>
                             <label className="btn-secondary" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                                 <Upload size={20} /> Importar Datos

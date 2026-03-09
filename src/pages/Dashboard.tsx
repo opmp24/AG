@@ -189,6 +189,20 @@ const Dashboard: React.FC = () => {
                 </div>
             )}
 
+            {!isOverBudget && projectedUsedPercent >= (preferences.budgetAlertThreshold || 80) && (
+                <div className="premium-card animate-fade-in" style={{ marginBottom: '1.5rem', padding: '1.5rem', background: 'rgba(245, 158, 11, 0.15)', border: '2px solid #f59e0b', borderRadius: '20px' }}>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <div style={{ background: '#f59e0b', padding: '0.8rem', borderRadius: '15px' }}><Bell size={24} color="white" /></div>
+                        <div>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#f59e0b' }}>Alerta de Presupuesto</h3>
+                            <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'white', opacity: 0.9 }}>
+                                Has usado el <b>{Math.round(projectedUsedPercent)}%</b> de tu presupuesto mensual. ¡Ten cuidado con los próximos gastos!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Category Budget Alerts (Envelopes) */}
             {categoryBreakdown.filter(c => c.limit && c.total > c.limit).map(c => (
                 <div key={`alert-${c.id}`} className="premium-card animate-fade-in" style={{ marginBottom: '1.2rem', padding: '1rem', border: `1px solid ${c.color}`, background: `${c.color}15` }}>
@@ -285,6 +299,41 @@ const Dashboard: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* Envelopes (Sobrecitos) Tracking */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 900 }}>Mis Sobrecitos</h3>
+                <Link to="/categories" style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 800 }}>Gestionar</Link>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', marginBottom: '2rem' }}>
+                {categoryBreakdown.filter(c => c.limit).map(c => {
+                    const percent = Math.min((c.total / c.limit!) * 100, 100);
+                    const isOver = c.total > c.limit!;
+                    return (
+                        <div key={`env-${c.id}`} className="premium-card" style={{ padding: '1.2rem', border: isOver ? '1px solid #ff4d4d' : '1px solid var(--glass-border)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+                                <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '1.2rem' }}>{c.icon}</span>
+                                    <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>{c.name}</span>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <span style={{ fontWeight: 900, fontSize: '0.9rem', color: isOver ? '#ff4d4d' : 'var(--text-primary)' }}>{formatCurrency(c.total)}</span>
+                                    <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', display: 'block' }}>de {formatCurrency(c.limit!)}</span>
+                                </div>
+                            </div>
+                            <div style={{ width: '100%', height: '6px', background: 'var(--glass)', borderRadius: '3px', overflow: 'hidden' }}>
+                                <div style={{ width: `${percent}%`, height: '100%', background: isOver ? '#ff4d4d' : c.color, borderRadius: '3px' }}></div>
+                            </div>
+                        </div>
+                    );
+                })}
+                {categoryBreakdown.filter(c => c.limit).length === 0 && (
+                    <div className="premium-card" style={{ padding: '1.5rem', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderStyle: 'dashed' }}>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No tienes límites por categoría asignados.</p>
+                        <Link to="/categories" style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 800, textDecoration: 'none', display: 'block', marginTop: '0.5rem' }}>+ CONFIGURAR SOBRECITOS</Link>
+                    </div>
+                )}
+            </div>
 
             <div className="premium-card" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 900, marginBottom: '1.2rem' }}>Historial de Ciclos</h3>

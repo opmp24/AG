@@ -172,3 +172,26 @@ export async function exportAllData() {
         exportedAt: Date.now()
     };
 }
+
+export async function exportToCSV() {
+    const expenses = await getAllExpenses();
+    const categories = await getCategories();
+
+    const headers = ['ID', 'Fecha', 'Descripcion', 'Monto', 'Moneda', 'Categoria', 'Metodo Pago', 'Modo'];
+    const rows = expenses.map(e => {
+        const cat = categories.find(c => c.id === e.categoryId)?.name || 'Otros';
+        return [
+            e.id,
+            new Date(e.date).toISOString().split('T')[0],
+            `"${e.description.replace(/"/g, '""')}"`,
+            e.amount,
+            e.currency,
+            `"${cat}"`,
+            e.paymentMethod,
+            e.source
+        ];
+    });
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    return csvContent;
+}

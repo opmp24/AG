@@ -10,7 +10,8 @@
     --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.theme-dark, .theme-system {
+.theme-dark,
+.theme-system {
     --bg-dark: #0f111a;
     --card-dark: #1e2133;
     --text-primary: #ffffff;
@@ -19,7 +20,7 @@
     --glass-border: rgba(255, 255, 255, 0.12);
     --background: #0f111a;
     --gradient-radial: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
-                       radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.08) 0%, transparent 50%);
+        radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.08) 0%, transparent 50%);
 }
 
 .theme-light {
@@ -31,7 +32,46 @@
     --glass-border: rgba(0, 0, 0, 0.08);
     --background: #f8fafc;
     --gradient-radial: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.03) 0%, transparent 50%),
-                       radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.03) 0%, transparent 50%);
+        radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.03) 0%, transparent 50%);
+}
+
+.theme-nature {
+    --bg-dark: #064e3b;
+    --card-dark: #065f46;
+    --primary: #10b981;
+    --text-primary: #ecfdf5;
+    --text-secondary: #a7f3d0;
+    --glass: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --background: #064e3b;
+    --gradient-radial: radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 90% 80%, rgba(5, 150, 105, 0.1) 0%, transparent 50%);
+}
+
+.theme-ocean {
+    --bg-dark: #0c4a6e;
+    --card-dark: #075985;
+    --primary: #0ea5e9;
+    --text-primary: #f0f9ff;
+    --text-secondary: #bae6fd;
+    --glass: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --background: #0c4a6e;
+    --gradient-radial: radial-gradient(circle at 10% 20%, rgba(14, 165, 233, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 90% 80%, rgba(2, 132, 199, 0.1) 0%, transparent 50%);
+}
+
+.theme-sunset {
+    --bg-dark: #450a0a;
+    --card-dark: #7f1d1d;
+    --primary: #f43f5e;
+    --text-primary: #fff1f2;
+    --text-secondary: #fecdd3;
+    --glass: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --background: #450a0a;
+    --gradient-radial: radial-gradient(circle at 10% 20%, rgba(244, 63, 94, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 90% 80%, rgba(225, 29, 72, 0.1) 0%, transparent 50%);
 }
 
 * {
@@ -51,7 +91,13 @@ body {
     transition: background-color var(--transition), color var(--transition);
 }
 
-.app-shell, .theme-light, .theme-dark, .theme-system {
+.app-shell,
+.theme-light,
+.theme-dark,
+.theme-system,
+.theme-nature,
+.theme-ocean,
+.theme-sunset {
     background-image: var(--gradient-radial);
 }
 
