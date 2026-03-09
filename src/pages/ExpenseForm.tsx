@@ -26,7 +26,7 @@ const ExpenseForm: React.FC = () => {
     const navigate = useNavigate();
     const { id } = useParams();
     const [searchParams] = useSearchParams();
-    const { preferences } = useApp();
+    const { preferences, updatePreferences } = useApp();
 
     const [amount, setAmount] = useState('');
     const [description, setDescription] = useState('');
@@ -62,6 +62,11 @@ const ExpenseForm: React.FC = () => {
                     setIsMagic(true);
                     setPaymentMethod('tarjeta');
                 }
+
+                // Autocategorización inteligente (Aprendizaje local)
+                if (queryMerchant && preferences.autoCategorization?.[queryMerchant.toLowerCase()]) {
+                    setCategoryId(preferences.autoCategorization[queryMerchant.toLowerCase()]);
+                }
             }
         }
         fetchData();
@@ -94,6 +99,19 @@ const ExpenseForm: React.FC = () => {
         };
 
         await saveExpense(expenseData);
+
+        // Actualizar aprendizaje local
+        const currentLearning = preferences.autoCategorization || {};
+        const merchantKey = description.toLowerCase().trim();
+        if (currentLearning[merchantKey] !== categoryId) {
+            updatePreferences({
+                autoCategorization: {
+                    ...currentLearning,
+                    [merchantKey]: categoryId
+                }
+            });
+        }
+
         setIsSaving(false);
         navigate('/');
     };

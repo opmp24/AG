@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { TrendingUp, Wallet, Bell, PieChart as PieIcon, Sparkles, ChevronRight, BarChart3, ChevronLeft, Calendar, LayoutGrid, AlertCircle, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { getAllExpenses, getAllScheduledExpenses, getCategories } from '../lib/db';
-import type { Expense, ScheduledExpense, Category } from '../types';
+import { getAllExpenses, getAllScheduledExpenses, getCategories, getAllSavingGoals } from '../lib/db';
+import type { Expense, ScheduledExpense, Category, SavingGoal } from '../types';
 import { useApp } from '../context/AppContext';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -38,13 +38,16 @@ const Dashboard: React.FC = () => {
     const [pendingTotal, setPendingTotal] = useState(0);
     const [pendingCount, setPendingCount] = useState(0);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [savingGoals, setSavingGoals] = useState<SavingGoal[]>([]);
 
     const loadData = async () => {
         try {
             const expenses = await getAllExpenses();
             const scheduled = await getAllScheduledExpenses();
             const cats = await getCategories();
+            const goals = await getAllSavingGoals();
             setCategories(cats.length > 0 ? cats : DEFAULT_CATEGORIES as Category[]);
+            setSavingGoals(goals);
 
             // Pending summary
             setPendingCount(scheduled.length);
@@ -92,8 +95,16 @@ const Dashboard: React.FC = () => {
     });
 
     const categoryBreakdown = Object.entries(breakdownMap).map(([id, amount]) => {
-        const catInfo = categories.find(c => c.id === id) || { name: 'Otro', icon: '📦', color: '#6366f1' };
-        return { name: catInfo.name, color: catInfo.color, total: amount, percent: totalSpentThisMonth > 0 ? (amount / totalSpentThisMonth) * 100 : 0 };
+        const catInfo = categories.find(c => c.id === id) || { name: 'Otro', icon: '📦', color: '#6366f1', monthlyLimit: undefined };
+        return {
+            id,
+            name: catInfo.name,
+            color: catInfo.color,
+            icon: catInfo.icon,
+            total: amount,
+            limit: (catInfo as any).monthlyLimit,
+            percent: totalSpentThisMonth > 0 ? (amount / totalSpentThisMonth) * 100 : 0
+        };
     }).sort((a, b) => b.total - a.total);
 
     const formatCurrency = (amount: number) => {
@@ -177,6 +188,16 @@ const Dashboard: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* Category Budget Alerts (Envelopes) */}
+            {categoryBreakdown.filter(c => c.limit && c.total > c.limit).map(c => (
+                <div key={`alert-${c.id}`} className="premium-card animate-fade-in" style={{ marginBottom: '1.2rem', padding: '1rem', border: `1px solid ${c.color}`, background: `${c.color}15` }}>
+                    <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+                        <AlertCircle size={18} color={c.color} />
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800 }}>Sobre-gasto en {c.icon} {c.name}: {formatCurrency(c.total - c.limit!)} extra</span>
+                    </div>
+                </div>
+            ))}
 
             {/* Smart Paste Bar */}
             <div className="premium-card clickable" onClick={handleSmartPaste} style={{ marginBottom: '1.2rem', padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.8rem', border: '1px solid var(--primary)', background: 'rgba(99, 102, 241, 0.05)' }}>
@@ -269,6 +290,41 @@ const Dashboard: React.FC = () => {
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 900, marginBottom: '1.2rem' }}>Historial de Ciclos</h3>
                 <div style={{ height: '140px' }}><Bar data={barData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { font: { size: 10, weight: 800 } } } } }} /></div>
             </div>
+
+            {/* Savings Goals */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 900 }}>Metas de Ahorro</h3>
+                <Link to="/settings" style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 800 }}>Gestionar</Link>
+            </div>
+            {savingGoals.length === 0 ? (
+                <div className="premium-card" style={{ padding: '1.5rem', textAlign: 'center', marginBottom: '2rem' }}>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No tienes metas activas.</p>
+                </div>
+            ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', marginBottom: '2rem' }}>
+                    {savingGoals.map(goal => {
+                        const goalPercent = (goal.currentAmount / goal.targetAmount) * 100;
+                        return (
+                            <div key={goal.id} className="premium-card" style={{ padding: '1.2rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+                                    <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '1.2rem' }}>{goal.icon}</span>
+                                        <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>{goal.name}</span>
+                                    </div>
+                                    <span style={{ fontWeight: 900, fontSize: '0.9rem', color: 'var(--success)' }}>{formatCurrency(goal.currentAmount)}</span>
+                                </div>
+                                <div style={{ width: '100%', height: '8px', background: 'var(--glass)', borderRadius: '4px', overflow: 'hidden' }}>
+                                    <div style={{ width: `${Math.min(goalPercent, 100)}%`, height: '100%', background: goal.color, borderRadius: '4px' }}></div>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem', fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-secondary)' }}>
+                                    <span>{Math.round(goalPercent)}% de {formatCurrency(goal.targetAmount)}</span>
+                                    <span>Faltan: {formatCurrency(goal.targetAmount - goal.currentAmount)}</span>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
 
             {/* Recent Activity */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>

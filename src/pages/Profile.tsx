@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LogOut, Shield, Download, Upload, CreditCard, CheckCircle2, User as UserIcon, Lock, Database, Globe, Smartphone, Heart, Wand2, Plus, Calendar, Save, FileText, AlertCircle, ShoppingCart, TrendingDown, ChevronRight, Share, Box, PieChart } from 'lucide-react';
+import { LogOut, Shield, Download, Upload, CreditCard, CheckCircle2, User as UserIcon, Lock, Database, Globe, Smartphone, Heart, Wand2, Plus, Calendar, Save, FileText, AlertCircle, ShoppingCart, TrendingDown, ChevronRight, Share, Box, PieChart, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
@@ -13,6 +13,7 @@ const Profile: React.FC = () => {
     const [tempBudget, setTempBudget] = useState(preferences.monthlyBudget.toString());
     const [tempCycle, setTempCycle] = useState((preferences.billingCycleStartDay || 1).toString());
     const [tempCurrency, setTempCurrency] = useState(preferences.currency || 'CLP');
+    const [tempTheme, setTempTheme] = useState(preferences.theme || 'system');
 
     // PWA Install state
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -21,13 +22,48 @@ const Profile: React.FC = () => {
     const [bulkText, setBulkText] = useState('');
     const [importing, setImporting] = useState(false);
     const [importResult, setImportResult] = useState<{ count: number, total: number } | null>(null);
+    const [savingGoals, setSavingGoals] = useState<import('../types').SavingGoal[]>([]);
+    const [showGoalModal, setShowGoalModal] = useState(false);
+    const [newGoal, setNewGoal] = useState({ name: '', target: '', current: '', icon: '💰', color: '#10b981' });
 
     useEffect(() => {
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             setDeferredPrompt(e);
         });
+
+        const loadGoals = async () => {
+            const { getAllSavingGoals } = await import('../lib/db');
+            const goals = await getAllSavingGoals();
+            setSavingGoals(goals);
+        };
+        loadGoals();
     }, []);
+
+    const handleAddGoal = async () => {
+        const { saveSavingGoal } = await import('../lib/db');
+        const goal: import('../types').SavingGoal = {
+            id: uuidv4(),
+            name: newGoal.name,
+            targetAmount: Number(newGoal.target),
+            currentAmount: Number(newGoal.current),
+            icon: newGoal.icon,
+            color: newGoal.color,
+            createdAt: Date.now()
+        };
+        await saveSavingGoal(goal);
+        setSavingGoals([...savingGoals, goal]);
+        setShowGoalModal(false);
+        setNewGoal({ name: '', target: '', current: '', icon: '💰', color: '#10b981' });
+    };
+
+    const handleDeleteGoal = async (id: string) => {
+        if (window.confirm("¿Eliminar esta meta?")) {
+            const { deleteSavingGoal } = await import('../lib/db');
+            await deleteSavingGoal(id);
+            setSavingGoals(savingGoals.filter(g => g.id !== id));
+        }
+    };
 
     const handleGoogleSuccess = (credentialResponse: any) => {
         if (credentialResponse.credential) {
@@ -41,7 +77,8 @@ const Profile: React.FC = () => {
         updatePreferences({
             monthlyBudget: Number(tempBudget),
             billingCycleStartDay: Number(tempCycle),
-            currency: tempCurrency as any
+            currency: tempCurrency as any,
+            theme: tempTheme as any
         });
         setTimeout(() => {
             setSaveStatus('saved');
@@ -215,6 +252,24 @@ const Profile: React.FC = () => {
                                     <input type="number" className="form-input" value={tempBudget} onChange={(e) => setTempBudget(e.target.value)} style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary)', flex: 1 }} />
                                 </div>
                             </div>
+                            <div className="form-group">
+                                <label className="form-label">Tema Visual</label>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                                    {['system', 'light', 'dark'].map(t => (
+                                        <button
+                                            key={t}
+                                            onClick={() => setTempTheme(t as any)}
+                                            style={{
+                                                padding: '0.8rem', borderRadius: '12px', border: tempTheme === t ? '2px solid var(--primary)' : '1px solid var(--glass-border)',
+                                                background: tempTheme === t ? 'var(--primary)' : 'var(--glass)', color: tempTheme === t ? 'white' : 'var(--text-secondary)',
+                                                fontWeight: 800, textTransform: 'capitalize', cursor: 'pointer'
+                                            }}
+                                        >
+                                            {t === 'system' ? '💻' : t === 'light' ? '☀️' : '🌙'} {t}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                             <button className="btn-primary" onClick={handleSavePreferences} disabled={saveStatus === 'saving'}>
                                 {saveStatus === 'saved' ? <><CheckCircle2 size={20} /> ¡Guardado!</> : <><Save size={20} /> Guardar Configuración</>}
                             </button>
@@ -245,9 +300,115 @@ const Profile: React.FC = () => {
                         </div>
                     </section>
 
+                    {/* Copia de Seguridad */}
+                    <section>
+                        <h3 style={{ marginBottom: '1.2rem', fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <Database size={20} color="var(--primary)" /> Mis Datos y Respaldo
+                        </h3>
+                        <div className="premium-card" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                                Exporta todos tus datos en un archivo JSON para tener un respaldo o moverlos a otro dispositivo.
+                            </p>
+                            <button
+                                className="btn-secondary"
+                                style={{ width: '100%' }}
+                                onClick={async () => {
+                                    const { exportAllData } = await import('../lib/db');
+                                    const data = await exportAllData();
+                                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `hogarsafe_backup_${new Date().toISOString().split('T')[0]}.json`;
+                                    a.click();
+                                }}
+                            >
+                                <Download size={20} /> Exportar Backup (JSON)
+                            </button>
+                            <label className="btn-secondary" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                <Upload size={20} /> Importar Datos
+                                <input
+                                    type="file"
+                                    hidden
+                                    accept=".json"
+                                    onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (!file) return;
+                                        const text = await file.text();
+                                        try {
+                                            const data = JSON.parse(text);
+                                            if (window.confirm("¿Seguro que quieres importar? Esto puede sobreescribir datos existentes.")) {
+                                                const { saveExpense, saveCategory, saveScheduledExpense, saveSavingGoal } = await import('../lib/db');
+                                                if (data.expenses) for (const exp of data.expenses) await saveExpense(exp);
+                                                if (data.categories) for (const cat of data.categories) await saveCategory(cat);
+                                                if (data.scheduled) for (const sch of data.scheduled) await saveScheduledExpense(sch);
+                                                if (data.goals) for (const goal of data.goals) await saveSavingGoal(goal);
+                                                alert("Importación completada con éxito. Recarga la app.");
+                                                window.location.reload();
+                                            }
+                                        } catch (err) {
+                                            alert("Archivo inválido.");
+                                        }
+                                    }}
+                                />
+                            </label>
+                        </div>
+                    </section>
+
                     <button className="btn-danger" onClick={logout} style={{ marginTop: '1rem', height: '55px' }}>
                         <LogOut size={20} /> Cerrar Sesión Segura
                     </button>
+
+                    {/* Metas de Ahorro Section */}
+                    <section style={{ marginTop: '2rem' }}>
+                        <h3 style={{ marginBottom: '1.2rem', fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <Heart size={20} color="var(--primary)" /> Mis Metas de Ahorro
+                        </h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {savingGoals.map(goal => (
+                                <div key={goal.id} className="premium-card" style={{ padding: '1.2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                        <div style={{ fontSize: '1.5rem', background: 'var(--glass)', padding: '0.5rem', borderRadius: '12px' }}>{goal.icon}</div>
+                                        <div>
+                                            <p style={{ fontWeight: 800 }}>{goal.name}</p>
+                                            <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Faltan: ${(goal.targetAmount - goal.currentAmount).toLocaleString()}</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => handleDeleteGoal(goal.id)} style={{ background: 'transparent', border: 'none', color: 'var(--danger)' }}><X size={18} /></button>
+                                </div>
+                            ))}
+                            <button className="btn-secondary" style={{ borderStyle: 'dashed' }} onClick={() => setShowGoalModal(true)}>
+                                <Plus size={20} /> Nueva Meta de Ahorro
+                            </button>
+                        </div>
+                    </section>
+
+                    {/* Modal para Metas */}
+                    {showGoalModal && (
+                        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(10px)' }}>
+                            <div className="premium-card animate-slide-up" style={{ width: '100%', maxWidth: '400px', padding: '2rem' }}>
+                                <h2 style={{ marginBottom: '1.5rem', fontWeight: 900 }}>Nueva Meta</h2>
+                                <div className="form-group">
+                                    <label className="form-label">Nombre de la Meta</label>
+                                    <input type="text" className="form-input" value={newGoal.name} onChange={e => setNewGoal({ ...newGoal, name: e.target.value })} placeholder="Ej: Viaje a Japón" />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <div className="form-group">
+                                        <label className="form-label">Objetivo ($)</label>
+                                        <input type="number" className="form-input" value={newGoal.target} onChange={e => setNewGoal({ ...newGoal, target: e.target.value })} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Ahorrado ($)</label>
+                                        <input type="number" className="form-input" value={newGoal.current} onChange={e => setNewGoal({ ...newGoal, current: e.target.value })} />
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                                    <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowGoalModal(false)}>Cancelar</button>
+                                    <button className="btn-primary" style={{ flex: 2 }} onClick={handleAddGoal}>Crear Meta</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

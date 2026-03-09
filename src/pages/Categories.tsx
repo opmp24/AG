@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { PieChart as PieIcon, Plus, X, Tag, Palette, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { getCategories, saveCategory, deleteCategory, getAllExpenses, reassignExpenses } from '../lib/db';
 import type { Category } from '../types';
+import { useApp } from '../context/AppContext';
 import { v4 as uuidv4 } from 'uuid';
 
 const DEFAULT_CATEGORIES_DATA = [
@@ -27,6 +28,8 @@ const Categories: React.FC = () => {
     const [name, setName] = useState('');
     const [icon, setIcon] = useState('📦');
     const [color, setColor] = useState('#6366f1');
+    const [monthlyLimit, setMonthlyLimit] = useState('');
+    const { preferences } = useApp();
 
     const loadData = async () => {
         let items = await getCategories();
@@ -49,6 +52,7 @@ const Categories: React.FC = () => {
             name,
             icon,
             color,
+            monthlyLimit: monthlyLimit ? Number(monthlyLimit) : undefined,
             createdAt: editingCategory?.createdAt || Date.now()
         };
         await saveCategory(newCat);
@@ -62,6 +66,7 @@ const Categories: React.FC = () => {
         setName(cat.name);
         setIcon(cat.icon);
         setColor(cat.color);
+        setMonthlyLimit(cat.monthlyLimit?.toString() || '');
         setShowModal(true);
     };
 
@@ -93,6 +98,7 @@ const Categories: React.FC = () => {
         setName('');
         setIcon('📦');
         setColor('#6366f1');
+        setMonthlyLimit('');
     };
 
     return (
@@ -143,6 +149,11 @@ const Categories: React.FC = () => {
                                 </div>
                                 <div>
                                     <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>{cat.name}</span>
+                                    {cat.monthlyLimit && (
+                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                                            Presupuesto: {new Intl.NumberFormat('es-CL', { style: 'currency', currency: preferences.currency }).format(cat.monthlyLimit)}
+                                        </p>
+                                    )}
                                     {cat.id === '6' && <p style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 800 }}>GENERAL / REASIGNACIÓN</p>}
                                     {cat.id === '7' && <p style={{ fontSize: '0.65rem', color: '#8b5cf6', fontWeight: 800 }}>PAGOS / FISCAL</p>}
                                 </div>
@@ -188,6 +199,24 @@ const Categories: React.FC = () => {
                                     required
                                     autoFocus
                                 />
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <PieIcon size={16} /> Presupuesto Mensual (Opcional)
+                                </label>
+                                <div style={{ position: 'relative' }}>
+                                    <input
+                                        type="number"
+                                        className="form-input"
+                                        placeholder="Ej: 50000"
+                                        value={monthlyLimit}
+                                        onChange={(e) => setMonthlyLimit(e.target.value)}
+                                        style={{ paddingLeft: '2.5rem' }}
+                                    />
+                                    <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontWeight: 900 }}>$</span>
+                                </div>
+                                <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>Asigna un límite de gasto a este "Sobrecito".</p>
                             </div>
 
                             <div>

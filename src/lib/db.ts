@@ -4,7 +4,7 @@ import { encryptData, decryptData } from './crypto';
 import type { Expense, Category, Budget, ScheduledExpense } from '../types';
 
 const DB_NAME = 'hogarsafe_db';
-const DB_VERSION = 2; // Incremented for new store
+const DB_VERSION = 3;
 
 interface HogarSafeDB {
     expenses: {
@@ -27,6 +27,10 @@ interface HogarSafeDB {
         key: string;
         value: ScheduledExpense;
     };
+    saving_goals: {
+        key: string;
+        value: import('../types').SavingGoal;
+    };
 }
 
 let dbPromise: Promise<IDBPDatabase<HogarSafeDB>>;
@@ -46,6 +50,11 @@ export function initDB() {
             if (oldVersion < 2) {
                 if (!db.objectStoreNames.contains('scheduled')) {
                     db.createObjectStore('scheduled', { keyPath: 'id' });
+                }
+            }
+            if (oldVersion < 3) {
+                if (!db.objectStoreNames.contains('saving_goals')) {
+                    db.createObjectStore('saving_goals', { keyPath: 'id' });
                 }
             }
         },
@@ -129,4 +138,37 @@ export async function reassignExpenses(oldCategoryId: string, newCategoryId: str
         }
     }
     return count;
+}
+// --- Saving Goals ---
+export async function saveSavingGoal(goal: import('../types').SavingGoal): Promise<void> {
+    const db = await dbPromise;
+    await db.put('saving_goals', goal);
+}
+
+export async function getAllSavingGoals(): Promise<import('../types').SavingGoal[]> {
+    const db = await dbPromise;
+    return await db.getAll('saving_goals');
+}
+
+export async function deleteSavingGoal(id: string): Promise<void> {
+    const db = await dbPromise;
+    await db.delete('saving_goals', id);
+}
+
+// --- Backup & Export ---
+export async function exportAllData() {
+    const db = await dbPromise;
+    const expenses = await getAllExpenses();
+    const categories = await db.getAll('categories');
+    const scheduled = await db.getAll('scheduled');
+    const goals = await db.getAll('saving_goals');
+
+    return {
+        version: DB_VERSION,
+        expenses,
+        categories,
+        scheduled,
+        goals,
+        exportedAt: Date.now()
+    };
 }

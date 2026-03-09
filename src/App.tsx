@@ -15,21 +15,23 @@ const Profile = lazy(() => import('./pages/Profile'));
 const Scheduled = lazy(() => import('./pages/Scheduled'));
 
 const AppContent: React.FC = () => {
-    const { isAuthenticated } = useApp();
+    const { isAuthenticated, preferences } = useApp();
 
     if (!isAuthenticated) {
         return (
-            <Suspense fallback={<div>Cargando...</div>}>
-                <Routes>
-                    <Route path="/login" element={<Profile />} />
-                    <Route path="*" element={<Navigate to="/login" />} />
-                </Routes>
-            </Suspense>
+            <div className={`theme-${preferences.theme}`} style={{ minHeight: '100vh', background: 'var(--background)' }}>
+                <Suspense fallback={<div>Cargando...</div>}>
+                    <Routes>
+                        <Route path="/login" element={<Profile />} />
+                        <Route path="*" element={<Navigate to="/login" />} />
+                    </Routes>
+                </Suspense>
+            </div>
         );
     }
 
     return (
-        <div className="app-shell">
+        <div className={`app-shell theme-${preferences.theme}`}>
             <main className="content">
                 <Suspense fallback={<div>Cargando vista...</div>}>
                     <Routes>

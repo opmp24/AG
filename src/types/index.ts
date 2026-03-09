@@ -17,6 +17,7 @@ export interface Category {
     color: string;
     isDefault?: boolean;
     createdAt: number;
+    monthlyLimit?: number; // Presupuesto por categoría (Sobres)
 }
 
 /** Financial expense record */
@@ -55,6 +56,18 @@ export interface UserProfile {
     locale?: string;
 }
 
+/** Metas de Ahorro */
+export interface SavingGoal {
+    id: string;
+    name: string;
+    targetAmount: number;
+    currentAmount: number;
+    icon: string;
+    color: string;
+    deadline?: number;
+    createdAt: number;
+}
+
 /** User preferences (synced) */
 export interface UserPreferences {
     theme: ThemeMode;
@@ -64,8 +77,10 @@ export interface UserPreferences {
     notificationsEnabled: boolean;
     monthlyBudget: number;
     budgetAlertThreshold: number;
-    billingCycleStartDay: number; // Nuevo: Día de inicio del mes (ej. 28)
+    billingCycleStartDay: number;
     profileId: string;
+    // Aprendizaje local
+    autoCategorization?: Record<string, string>; // merchant -> categoryId
 }
 
 /** Encrypted data wrapper for export/import */
