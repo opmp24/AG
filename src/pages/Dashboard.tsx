@@ -391,7 +391,7 @@ const Dashboard: React.FC = () => {
             {/* Savings Goals */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                 <h3 style={{ fontSize: '1rem', fontWeight: 900 }}>Metas de Ahorro</h3>
-                <Link to="/settings" style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 800 }}>Gestionar</Link>
+                <Link to="/metas" style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 800 }}>Gestionar</Link>
             </div>
             {savingGoals.length === 0 ? (
                 <div className="premium-card" style={{ padding: '1.5rem', textAlign: 'center', marginBottom: '2rem' }}>

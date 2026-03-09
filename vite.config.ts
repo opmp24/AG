@@ -10,8 +10,8 @@ export default defineConfig({
             registerType: 'autoUpdate',
             includeAssets: ['favicon.svg', 'icons/*.png'],
             manifest: {
-                name: 'HogarSafe - Control de Gastos',
-                short_name: 'HogarSafe',
+                name: 'Gastop - Control de Gastos',
+                short_name: 'Gastop',
                 description: 'Gestión y control de gastos del hogar con privacidad total',
                 theme_color: '#6366f1',
                 background_color: '#0f0f23',

@@ -13,6 +13,7 @@ const History = lazy(() => import('./pages/History'));
 const Categories = lazy(() => import('./pages/Categories'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Scheduled = lazy(() => import('./pages/Scheduled'));
+const Goals = lazy(() => import('./pages/Goals'));
 
 const AppContent: React.FC = () => {
     const { isAuthenticated, preferences } = useApp();
@@ -42,6 +43,7 @@ const AppContent: React.FC = () => {
                         <Route path="/scheduled" element={<Scheduled />} />
                         <Route path="/categories" element={<Categories />} />
                         <Route path="/settings" element={<Profile />} />
+                        <Route path="/metas" element={<Goals />} />
                         <Route path="*" element={<Navigate to="/" />} />
                     </Routes>
                 </Suspense>
@@ -67,7 +69,7 @@ const AppContent: React.FC = () => {
                     </NavLink>
                 </div>
 
-                <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                <NavLink to="/metas" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                     <Target size={22} />
                     <span style={{ fontSize: '0.65rem' }}>Metas</span>
                 </NavLink>

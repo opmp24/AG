@@ -19,61 +19,6 @@ const Profile: React.FC = () => {
     const [bulkText, setBulkText] = useState('');
     const [importing, setImporting] = useState(false);
     const [importResult, setImportResult] = useState<{ count: number, total: number } | null>(null);
-    const [savingGoals, setSavingGoals] = useState<import('../types').SavingGoal[]>([]);
-    const [showGoalModal, setShowGoalModal] = useState(false);
-    const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
-    const [newGoal, setNewGoal] = useState({ name: '', target: '', current: '', icon: '💰', color: '#10b981' });
-
-    useEffect(() => {
-        const loadGoals = async () => {
-            const { getAllSavingGoals } = await import('../lib/db');
-            const goals = await getAllSavingGoals();
-            setSavingGoals(goals);
-        };
-        loadGoals();
-    }, []);
-
-    const handleAddGoal = async () => {
-        const { saveSavingGoal } = await import('../lib/db');
-        const goal: import('../types').SavingGoal = {
-            id: editingGoalId || uuidv4(),
-            name: newGoal.name,
-            targetAmount: Number(newGoal.target),
-            currentAmount: Number(newGoal.current),
-            icon: newGoal.icon,
-            color: newGoal.color,
-            createdAt: Date.now()
-        };
-        await saveSavingGoal(goal);
-        if (editingGoalId) {
-            setSavingGoals(savingGoals.map(g => g.id === editingGoalId ? goal : g));
-        } else {
-            setSavingGoals([...savingGoals, goal]);
-        }
-        setShowGoalModal(false);
-        setNewGoal({ name: '', target: '', current: '', icon: '💰', color: '#10b981' });
-        setEditingGoalId(null);
-    };
-
-    const handleEditGoal = (goal: typeof savingGoals[0]) => {
-        setNewGoal({
-            name: goal.name,
-            target: goal.targetAmount.toString(),
-            current: goal.currentAmount.toString(),
-            icon: goal.icon,
-            color: goal.color
-        });
-        setEditingGoalId(goal.id);
-        setShowGoalModal(true);
-    };
-
-    const handleDeleteGoal = async (id: string) => {
-        if (window.confirm("¿Eliminar esta meta?")) {
-            const { deleteSavingGoal } = await import('../lib/db');
-            await deleteSavingGoal(id);
-            setSavingGoals(savingGoals.filter(g => g.id !== id));
-        }
-    };
 
     const handleGoogleSuccess = (credentialResponse: any) => {
         if (credentialResponse.credential) {
@@ -172,7 +117,7 @@ const Profile: React.FC = () => {
                                 <div style={{ background: '#f59e0b', padding: '0.8rem', borderRadius: '15px' }}><Smartphone color="white" size={24} /></div>
                                 <div>
                                     <h3 style={{ fontWeight: 900, marginBottom: '0.3rem' }}>App Instalable</h3>
-                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Lleva HogarSafe en tu pantalla de inicio como una App real, sin ocupar espacio de memoria.</p>
+                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Lleva Gastop en tu pantalla de inicio como una App real, sin ocupar espacio de memoria.</p>
                                 </div>
                             </div>
                         </div>
@@ -188,7 +133,7 @@ const Profile: React.FC = () => {
                     {/* Instrucciones de Instalación */}
                     <div className="premium-card" style={{ padding: '2rem' }}>
                         <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                            <Download size={20} color="var(--primary)" /> Instalar HogarSafe
+                            <Download size={20} color="var(--primary)" /> Instalar Gastop
                         </h3>
 
                         {/* Android / Chrome Desktop */}
@@ -200,7 +145,7 @@ const Profile: React.FC = () => {
                                 </button>
                             ) : (
                                 <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                    Ve a los <b>3 puntos</b> de tu navegador y selecciona <b>"Instalar Aplicación"</b> para tener HogarSafe en tu menú.
+                                    Ve a los <b>3 puntos</b> de tu navegador y selecciona <b>"Instalar Aplicación"</b> para tener Gastop en tu menú.
                                 </div>
                             )}
                         </div>
@@ -212,7 +157,7 @@ const Profile: React.FC = () => {
                                 <ol style={{ paddingLeft: '1.2rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                     <li>Pulsa el botón <b>Compartir</b> <Share size={14} style={{ display: 'inline' }} /> al final de Safari.</li>
                                     <li>Desliza hacia arriba y elige <b>"Agregar a inicio"</b>.</li>
-                                    <li>¡Listo! Ya tienes HogarSafe como una App real.</li>
+                                    <li>¡Listo! Ya tienes Gastop como una App real.</li>
                                 </ol>
                             </div>
                         </div>
@@ -389,60 +334,6 @@ const Profile: React.FC = () => {
                     <button className="btn-danger" onClick={logout} style={{ marginTop: '1rem', height: '55px' }}>
                         <LogOut size={20} /> Cerrar Sesión Segura
                     </button>
-
-                    {/* Metas de Ahorro Section */}
-                    <section style={{ marginTop: '2rem' }}>
-                        <h3 style={{ marginBottom: '1.2rem', fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <Heart size={20} color="var(--primary)" /> Mis Metas de Ahorro
-                        </h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {savingGoals.map(goal => (
-                                <div key={goal.id} className="premium-card" style={{ padding: '1.2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                                        <div style={{ fontSize: '1.5rem', background: 'var(--glass)', padding: '0.5rem', borderRadius: '12px' }}>{goal.icon}</div>
-                                        <div>
-                                            <p style={{ fontWeight: 800 }}>{goal.name}</p>
-                                            <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Faltan: ${(goal.targetAmount - goal.currentAmount).toLocaleString()}</p>
-                                        </div>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '0.8rem' }}>
-                                        <button onClick={() => handleEditGoal(goal)} style={{ background: 'transparent', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}><Edit2 size={18} /></button>
-                                        <button onClick={() => handleDeleteGoal(goal.id)} style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}><X size={18} /></button>
-                                    </div>
-                                </div>
-                            ))}
-                            <button className="btn-secondary" style={{ borderStyle: 'dashed' }} onClick={() => setShowGoalModal(true)}>
-                                <Plus size={20} /> Nueva Meta de Ahorro
-                            </button>
-                        </div>
-                    </section>
-
-                    {/* Modal para Metas */}
-                    {showGoalModal && (
-                        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(10px)' }}>
-                            <div className="premium-card animate-slide-up" style={{ width: '100%', maxWidth: '400px', padding: '2rem' }}>
-                                <h2 style={{ marginBottom: '1.5rem', fontWeight: 900 }}>Nueva Meta</h2>
-                                <div className="form-group">
-                                    <label className="form-label">Nombre de la Meta</label>
-                                    <input type="text" className="form-input" value={newGoal.name} onChange={e => setNewGoal({ ...newGoal, name: e.target.value })} placeholder="Ej: Viaje a Japón" />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                    <div className="form-group">
-                                        <label className="form-label">Objetivo ($)</label>
-                                        <input type="number" className="form-input" value={newGoal.target} onChange={e => setNewGoal({ ...newGoal, target: e.target.value })} />
-                                    </div>
-                                    <div className="form-group">
-                                        <label className="form-label">Ahorrado ($)</label>
-                                        <input type="number" className="form-input" value={newGoal.current} onChange={e => setNewGoal({ ...newGoal, current: e.target.value })} />
-                                    </div>
-                                </div>
-                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                                    <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowGoalModal(false)}>Cancelar</button>
-                                    <button className="btn-primary" style={{ flex: 2 }} onClick={handleAddGoal}>Crear Meta</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </div>
             )}
         </div>
