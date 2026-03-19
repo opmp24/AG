@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { PieChart as PieIcon, Plus, X, Tag, Palette, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { PieChart as PieIcon, Plus, X, Tag, Palette, CheckCircle2, ChevronLeft } from 'lucide-react';
 import { getCategories, saveCategory, deleteCategory, getAllExpenses, reassignExpenses } from '../lib/db';
 import type { Category } from '../types';
 import { useApp } from '../context/AppContext';
 import { v4 as uuidv4 } from 'uuid';
+import { useNavigate } from 'react-router-dom';
 
 const DEFAULT_CATEGORIES_DATA = [
     { id: '1', name: 'Alimentación', icon: '🍎', color: '#ef4444' },
@@ -15,10 +16,11 @@ const DEFAULT_CATEGORIES_DATA = [
     { id: '7', name: 'Pagos', icon: '💸', color: '#8b5cf6' },
 ];
 
-const ICON_OPTIONS = ['🍎', '🏠', '🚗', '🍿', '⚕️', '📦', '🛒', '🔌', '🎬', '💊', '👕', '🎮', '✈️', '🐶', '🎁'];
-const COLOR_OPTIONS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#6366f1', '#8b5cf6', '#06b6d4', '#475569'];
+const ICON_OPTIONS = ['🍎', '🏠', '🚗', '🍿', '⚕️', '📦', '🛒', '🔌', '🎬', '💊', '👕', '🎮', '✈️', '🐶', '🎁', '🏦', '📱', '🏋️', '📚', '🍕'];
+const COLOR_OPTIONS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#6366f1', '#8b5cf6', '#06b6d4', '#475569', '#f97316', '#84cc16', '#d946ef'];
 
 const Categories: React.FC = () => {
+    const navigate = useNavigate();
     const [categories, setCategories] = useState<Category[]>([]);
     const [showModal, setShowModal] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -84,7 +86,7 @@ const Categories: React.FC = () => {
                 `¿Deseas continuar?`
             );
             if (proceed) {
-                await reassignExpenses(id, '6'); // ID 6 es "Otros"
+                await reassignExpenses(id, '6'); 
                 await deleteCategory(id);
                 loadData();
             }
@@ -105,71 +107,78 @@ const Categories: React.FC = () => {
         setIsLimitActive(true);
     };
 
+    const formatCurrency = (val: number) => {
+        return new Intl.NumberFormat('es-CL', { style: 'currency', currency: preferences.currency, maximumFractionDigits: 0 }).format(val);
+    };
+
     return (
-        <div className="animate-slide-up" style={{ padding: '1.5rem', maxWidth: '600px', margin: '0 auto', paddingBottom: '3rem' }}>
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-                <div>
-                    <h1 className="gradient-text" style={{ fontSize: '2rem', fontWeight: 900 }}>Micro-presupuestos</h1>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontWeight: 600 }}>Gestiona la clasificación de tu hogar</p>
+        <div className="animate-slide-up" style={{ padding: '1.25rem', maxWidth: '600px', margin: '0 auto', paddingBottom: '4rem' }}>
+            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <button onClick={() => navigate('/')} className="btn-glass" style={{ padding: '0.5rem' }}>
+                        <ChevronLeft size={18} />
+                    </button>
+                    <div>
+                        <h1 className="gradient-text" style={{ fontSize: '1.6rem', fontWeight: 900 }}>Mini-presupuestos</h1>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 600 }}>Asigna límites a tus categorías</p>
+                    </div>
                 </div>
-                <button
-                    className="fab-button"
-                    style={{ width: '48px', height: '48px', margin: 0 }}
+                <button 
                     onClick={() => { resetForm(); setShowModal(true); }}
+                    className="fab-button"
+                    style={{ width: '45px', height: '45px' }}
                 >
-                    <Plus size={24} />
+                    <Plus size={22} />
                 </button>
             </header>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.8rem' }}>
                 {loading ? (
-                    <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Cargando...</p>
+                    <div style={{ padding: '3rem', textAlign: 'center' }}><div className="spinner" style={{ margin: '0 auto' }}></div></div>
                 ) : (
                     categories.map(cat => (
                         <div
                             key={cat.id}
-                            className="premium-card interactive-card"
+                            className="premium-card clickable"
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
-                                padding: '1.2rem',
-                                borderLeft: `5px solid ${cat.color}`
+                                padding: '1rem',
+                                borderLeft: `6px solid ${cat.color}`
                             }}
                             onClick={() => handleEdit(cat)}
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                 <div style={{
-                                    width: '45px',
-                                    height: '45px',
-                                    borderRadius: '16px',
-                                    background: `${cat.color}20`,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: '1.5rem'
+                                    width: '42px', height: '42px', borderRadius: '14px',
+                                    background: `${cat.color}15`,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: '1.4rem'
                                 }}>
                                     {cat.icon}
                                 </div>
-                                <div>
-                                    <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>{cat.name}</span>
-                                    {cat.monthlyLimit && (
-                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
-                                            {cat.isLimitActive === false ? '⏸️ Inactivo - ' : ''}Presupuesto: {new Intl.NumberFormat('es-CL', { style: 'currency', currency: preferences.currency }).format(cat.monthlyLimit)}
+                                <div style={{ minWidth: 0 }}>
+                                    <span style={{ fontWeight: 800, fontSize: '0.95rem', display: 'block' }}>{cat.name}</span>
+                                    {cat.monthlyLimit ? (
+                                        <p style={{ fontSize: '0.65rem', color: isLimitActive ? 'var(--text-secondary)' : 'var(--text-muted)', fontWeight: 700 }}>
+                                            {cat.isLimitActive === false ? '⏸️ Límite en pausa' : `Límite: ${formatCurrency(cat.monthlyLimit)}`}
                                         </p>
+                                    ) : (
+                                        <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700 }}>Sin límite asignado</p>
                                     )}
-                                    {cat.id === '6' && <p style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 800 }}>GENERAL / REASIGNACIÓN</p>}
-                                    {cat.id === '7' && <p style={{ fontSize: '0.65rem', color: '#8b5cf6', fontWeight: 800 }}>PAGOS / FISCAL</p>}
                                 </div>
                             </div>
-                            {cat.id !== '6' && cat.id !== '7' && (
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); handleDelete(cat.id, cat.name); }}
-                                    style={{ background: 'transparent', border: 'none', color: '#ff6b6b', opacity: 0.6, cursor: 'pointer' }}
-                                >
-                                    <X size={18} />
-                                </button>
-                            )}
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                {cat.id !== '6' && cat.id !== '7' && (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleDelete(cat.id, cat.name); }}
+                                        style={{ background: 'transparent', border: 'none', color: '#ff6b6b', opacity: 0.4, cursor: 'pointer', padding: '0.5rem' }}
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     ))
                 )}
@@ -178,26 +187,24 @@ const Categories: React.FC = () => {
             {/* Modal de Creación/Edición */}
             {showModal && (
                 <div style={{
-                    position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-                    background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)',
+                    position: 'fixed', inset: 0,
+                    background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(10px)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000,
-                    padding: '1.5rem'
+                    padding: '1.25rem'
                 }}>
-                    <div className="premium-card animate-slide-up" style={{ width: '100%', maxWidth: '400px', padding: '2rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                            <h2 style={{ fontSize: '1.4rem', fontWeight: 900 }}>{editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}</h2>
-                            <button onClick={() => setShowModal(false)} style={{ background: 'transparent', border: 'none', color: 'white' }}><X /></button>
+                    <div className="premium-card animate-slide-up" style={{ width: '100%', maxWidth: '420px', padding: '1.8rem', maxHeight: '90vh', overflowY: 'auto' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h2 style={{ fontSize: '1.2rem', fontWeight: 900 }}>{editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}</h2>
+                            <button onClick={() => setShowModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)' }}><X size={20}/></button>
                         </div>
 
-                        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                            <div className="form-group">
-                                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Tag size={16} /> Nombre
-                                </label>
+                        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label className="form-label"><Tag size={14} /> Nombre</label>
                                 <input
                                     type="text"
                                     className="form-input"
-                                    placeholder="Alquiler, Gimnasio, etc..."
+                                    placeholder="Ej: Gimnasio, Mascotas..."
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     required
@@ -205,10 +212,8 @@ const Categories: React.FC = () => {
                                 />
                             </div>
 
-                            <div className="form-group">
-                                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <PieIcon size={16} /> Presupuesto Mensual (Opcional)
-                                </label>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label className="form-label"><PieIcon size={14} /> Presupuesto Mensual</label>
                                 <div style={{ position: 'relative' }}>
                                     <input
                                         type="number"
@@ -220,28 +225,29 @@ const Categories: React.FC = () => {
                                     />
                                     <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontWeight: 900 }}>$</span>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', marginTop: '0.5rem', gap: '0.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', marginTop: '0.75rem', gap: '0.6rem', padding: '0.5rem', background: 'var(--glass)', borderRadius: '10px' }}>
                                     <input
                                         type="checkbox"
+                                        id="limit-active"
                                         checked={isLimitActive}
                                         onChange={(e) => setIsLimitActive(e.target.checked)}
-                                        style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}
+                                        style={{ width: '18px', height: '18px', accentColor: 'var(--primary)' }}
                                     />
-                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Activo (mostrar en todos los ciclos)</span>
+                                    <label htmlFor="limit-active" style={{ fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>Activar alerta de presupuesto</label>
                                 </div>
-                                <p style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>Asigna un límite de gasto a este "Micro-presupuesto".</p>
                             </div>
 
                             <div>
                                 <label className="form-label">Icono</label>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.5rem' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.4rem', maxHeight: '120px', overflowY: 'auto', padding: '0.3rem' }}>
                                     {ICON_OPTIONS.map(i => (
                                         <button
                                             key={i} type="button"
                                             onClick={() => setIcon(i)}
                                             style={{
-                                                fontSize: '1.5rem', padding: '0.5rem', borderRadius: '12px', border: icon === i ? '2px solid var(--primary)' : '1px solid transparent',
-                                                background: icon === i ? 'rgba(99, 102, 241, 0.1)' : 'transparent', cursor: 'pointer'
+                                                fontSize: '1.3rem', padding: '0.6rem', borderRadius: '12px', 
+                                                border: icon === i ? '2px solid var(--primary)' : '1px solid var(--glass-border)',
+                                                background: icon === i ? 'var(--primary)20' : 'transparent', cursor: 'pointer'
                                             }}
                                         >
                                             {i}
@@ -251,25 +257,24 @@ const Categories: React.FC = () => {
                             </div>
 
                             <div>
-                                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Palette size={16} /> Color
-                                </label>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                <label className="form-label"><Palette size={14} /> Color</label>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem' }}>
                                     {COLOR_OPTIONS.map(c => (
                                         <button
                                             key={c} type="button"
                                             onClick={() => setColor(c)}
                                             style={{
-                                                width: '32px', height: '32px', borderRadius: '50%', background: c, border: color === c ? '2px solid white' : 'none', cursor: 'pointer',
-                                                boxShadow: color === c ? `0 0 10px ${c}` : 'none'
+                                                width: '32px', height: '32px', borderRadius: '10px', background: c, 
+                                                border: color === c ? '3px solid white' : 'none', cursor: 'pointer',
+                                                boxShadow: color === c ? `0 0 12px ${c}80` : 'none'
                                             }}
                                         />
                                     ))}
                                 </div>
                             </div>
 
-                            <button className="btn-primary" type="submit" style={{ marginTop: '1rem', width: '100%' }}>
-                                <CheckCircle2 size={20} /> Guardar Categoría
+                            <button className="btn-primary" type="submit" style={{ marginTop: '0.5rem' }}>
+                                <CheckCircle2 size={18} /> Guardar Cambios
                             </button>
                         </form>
                     </div>

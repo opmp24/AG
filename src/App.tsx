@@ -15,13 +15,19 @@ const Profile = lazy(() => import('./pages/Profile'));
 const Scheduled = lazy(() => import('./pages/Scheduled'));
 const Goals = lazy(() => import('./pages/Goals'));
 
+const LoadingFallback: React.FC = () => (
+    <div style={{ display: 'flex', height: '60vh', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="spinner"></div>
+    </div>
+);
+
 const AppContent: React.FC = () => {
     const { isAuthenticated, preferences } = useApp();
 
     if (!isAuthenticated) {
         return (
             <div className={`theme-${preferences.theme}`} style={{ minHeight: '100vh', background: 'var(--background)' }}>
-                <Suspense fallback={<div>Cargando...</div>}>
+                <Suspense fallback={<LoadingFallback />}>
                     <Routes>
                         <Route path="/login" element={<Profile />} />
                         <Route path="*" element={<Navigate to="/login" />} />
@@ -34,7 +40,7 @@ const AppContent: React.FC = () => {
     return (
         <div className={`app-shell theme-${preferences.theme}`}>
             <main className="content">
-                <Suspense fallback={<div>Cargando vista...</div>}>
+                <Suspense fallback={<LoadingFallback />}>
                     <Routes>
                         <Route path="/" element={<Dashboard />} />
                         <Route path="/add" element={<ExpenseForm />} />
@@ -49,37 +55,29 @@ const AppContent: React.FC = () => {
                 </Suspense>
             </main>
 
-            <nav className="bottom-nav" style={{ padding: '0 0.5rem 1.5rem 0.5rem' }}>
-                <NavLink to="/" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <LayoutDashboard size={22} />
-                    <span style={{ fontSize: '0.65rem' }}>Inicio</span>
+            <nav className="bottom-nav" style={{ padding: '0 0.5rem 1rem 0.5rem' }}>
+                <NavLink to="/" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} end>
+                    <LayoutDashboard size={20} />
+                    <span>Inicio</span>
                 </NavLink>
                 <NavLink to="/history" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <List size={22} />
-                    <span style={{ fontSize: '0.65rem' }}>Historial</span>
-                </NavLink>
-                <NavLink to="/categories" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <PieChart size={22} />
-                    <span style={{ fontSize: '0.65rem' }}>Mini $</span>
+                    <List size={20} />
+                    <span>Historial</span>
                 </NavLink>
 
                 <div className="fab-container">
-                    <NavLink to="/add" className="fab-button" style={{ width: '55px', height: '55px', borderRadius: '18px' }}>
-                        <Plus size={28} />
+                    <NavLink to="/add" className="fab-button" style={{ width: '52px', height: '52px', borderRadius: '16px' }}>
+                        <Plus size={26} />
                     </NavLink>
                 </div>
 
-                <NavLink to="/metas" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <Target size={22} />
-                    <span style={{ fontSize: '0.65rem' }}>Metas</span>
-                </NavLink>
                 <NavLink to="/scheduled" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <CalendarCheck size={22} />
-                    <span style={{ fontSize: '0.65rem' }}>Pagos</span>
+                    <CalendarCheck size={20} />
+                    <span>Pagos</span>
                 </NavLink>
                 <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <Settings size={22} />
-                    <span style={{ fontSize: '0.65rem' }}>Ajustes</span>
+                    <Settings size={20} />
+                    <span>Ajustes</span>
                 </NavLink>
             </nav>
         </div>
