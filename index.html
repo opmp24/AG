@@ -22,6 +22,27 @@
 
 <body>
   <div id="root"></div>
+
+  <!-- Diagnóstico de Emergencia si la App falla al cargar -->
+  <div id="error-screen" style="display:none; position:fixed; inset:0; background:#0f0f23; color:#fff; padding:2rem; font-family:sans-serif; text-align:center; z-index:9999;">
+    <h1 style="color:#ef4444; font-size:1.5rem;">🚨 Error de Carga de Aplicación</h1>
+    <p style="opacity:0.8; font-size:0.9rem; margin-bottom:2rem;">Parece que los archivos no se están sirviendo correctamente (MIME Type o 404).</p>
+    <div style="background:rgba(255,255,255,0.05); padding:1rem; border-radius:12px; margin-bottom:2rem; text-align:left; font-family:monospace; font-size:0.8rem;">
+      <p id="error-details">Detectando problema...</p>
+    </div>
+    <button onclick="location.reload()" style="background:#4ade80; color:#000; border:none; padding:0.8rem 1.5rem; border-radius:8px; font-weight:900; cursor:pointer;">REINTENTAR CARGA</button>
+  </div>
+
+  <script>
+    // Script de rescate: si el script principal no carga en 5 segundos, muestra error
+    window.addEventListener('error', function(e) {
+      if (e.target.tagName === 'SCRIPT' || e.message.includes('MIME')) {
+        document.getElementById('error-screen').style.display = 'block';
+        document.getElementById('error-details').innerText = 'ERROR: No se pueden cargar los módulos (Posible origen en src/ en lugar de dist/). Asegúrate de que el despliegue sea la carpeta DIST.';
+      }
+    }, true);
+  </script>
+
   <script type="module" src="./src/main.tsx"></script>
 </body>
 
