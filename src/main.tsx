@@ -10,8 +10,14 @@ if ('serviceWorker' in navigator) {
     registerSW({ immediate: true });
 }
 
+import { BrowserRouter } from 'react-router-dom';
+
+const basename = import.meta.env.MODE === 'production' ? '/AG/' : '/';
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
-        <App />
+        <BrowserRouter basename={basename}>
+            <App />
+        </BrowserRouter>
     </React.StrictMode>
 );

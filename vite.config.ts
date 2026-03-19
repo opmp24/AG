@@ -3,24 +3,26 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
-export default defineConfig({
-    base: '/AG/',
-    plugins: [
-        react(),
-        VitePWA({
-            registerType: 'autoUpdate',
-            injectRegister: 'auto',
-            includeAssets: ['favicon.svg', 'icons/*.png'],
-            manifest: {
-                name: 'Gastop - Control de Gastos',
-                short_name: 'Gastop',
-                description: 'Gestión y control de gastos del hogar con privacidad total',
-                theme_color: '#4ade80',
-                background_color: '#0f0f23',
-                display: 'standalone',
-                orientation: 'portrait-primary',
-                scope: '/AG/',
-                start_url: '/AG/',
+export default defineConfig(({ mode }) => {
+    const base = mode === 'production' ? '/AG/' : '/';
+    return {
+        base,
+        plugins: [
+            react(),
+            VitePWA({
+                registerType: 'autoUpdate',
+                injectRegister: 'auto',
+                includeAssets: ['favicon.svg', 'icons/*.png'],
+                manifest: {
+                    name: 'Gastop - Control de Gastos',
+                    short_name: 'Gastop',
+                    description: 'Gestión y control de gastos del hogar con privacidad total',
+                    theme_color: '#4ade80',
+                    background_color: '#0f0f23',
+                    display: 'standalone',
+                    orientation: 'portrait-primary',
+                    scope: base,
+                    start_url: base,
                 lang: 'es',
                 categories: ['finance', 'utilities'],
                 icons: [
@@ -71,4 +73,5 @@ export default defineConfig({
         port: 3000,
         host: true
     }
+};
 });
