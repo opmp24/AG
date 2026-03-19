@@ -4,7 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
 export default defineConfig(({ mode }) => {
-    const base = mode === 'production' ? '/AG/' : '/';
+    const base = mode === 'production' ? './' : '/';
     return {
         base,
         plugins: [
