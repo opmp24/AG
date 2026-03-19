@@ -43,7 +43,7 @@ const ExpenseForm: React.FC = () => {
                     setDescription(exp.description);
                     setCategoryId(exp.categoryId);
                     setDate(new Date(exp.date).toISOString().split('T')[0]);
-                    setPaymentMethod(exp.paymentMethod);
+                    setPaymentMethod(exp.paymentMethod || 'efectivo');
                 }
             } else {
                 // Check for URL params (from magic paste)
