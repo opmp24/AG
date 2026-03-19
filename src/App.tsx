@@ -1,98 +1,88 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Plus, List, Settings, PieChart, CalendarCheck, Target } from 'lucide-react';
+import { Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
+import { Home, History as HistoryIcon, Plus, Settings, CalendarClock, LayoutGrid, Target } from 'lucide-react';
 import { AppProvider, useApp } from './context/AppContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
-const GOOGLE_CLIENT_ID = "912408221896-g1r1uaf336q56sqt9tb3ko3f3knqeh9i.apps.googleusercontent.com";
-
-// Lazy loading para optimizar rendimiento de PWA
+// Lazy load pages
 const Dashboard = lazy(() => import('./pages/Dashboard'));
-const ExpenseForm = lazy(() => import('./pages/ExpenseForm'));
 const History = lazy(() => import('./pages/History'));
-const Categories = lazy(() => import('./pages/Categories'));
+const ExpenseForm = lazy(() => import('./pages/ExpenseForm'));
 const Profile = lazy(() => import('./pages/Profile'));
-const Scheduled = lazy(() => import('./pages/Scheduled'));
+const Categories = lazy(() => import('./pages/Categories'));
 const Goals = lazy(() => import('./pages/Goals'));
+const Scheduled = lazy(() => import('./pages/Scheduled'));
+
+const LoadingFallback = () => (
+    <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="spinner"></div>
+    </div>
+);
 
 const AppContent: React.FC = () => {
-    const { isAuthenticated, preferences } = useApp();
+    const { user, preferences } = useApp();
+    const location = useLocation();
 
-    if (!isAuthenticated) {
-        return (
-            <div className={`theme-${preferences.theme}`} style={{ minHeight: '100vh', background: 'var(--background)' }}>
-                <Suspense fallback={<div>Cargando...</div>}>
-                    <Routes>
-                        <Route path="/login" element={<Profile />} />
-                        <Route path="*" element={<Navigate to="/login" />} />
-                    </Routes>
-                </Suspense>
-            </div>
-        );
-    }
+    // No navigation on Add/Edit pages for a cleaner focus
+    const showNav = !location.pathname.startsWith('/add') && !location.pathname.startsWith('/edit');
+
+    // Themes are handled by classes on the container
+    const themeClass = `theme-${preferences.theme || 'dark'}`;
 
     return (
-        <div className={`app-shell theme-${preferences.theme}`}>
-            <main className="content">
-                <Suspense fallback={<div>Cargando vista...</div>}>
+        <div className={`app-shell ${themeClass}`}>
+            <div id="root">
+                <Suspense fallback={<LoadingFallback />}>
                     <Routes>
                         <Route path="/" element={<Dashboard />} />
+                        <Route path="/history" element={<History />} />
                         <Route path="/add" element={<ExpenseForm />} />
                         <Route path="/edit/:id" element={<ExpenseForm />} />
-                        <Route path="/history" element={<History />} />
-                        <Route path="/scheduled" element={<Scheduled />} />
                         <Route path="/categories" element={<Categories />} />
-                        <Route path="/settings" element={<Profile />} />
                         <Route path="/metas" element={<Goals />} />
-                        <Route path="*" element={<Navigate to="/" />} />
+                        <Route path="/scheduled" element={<Scheduled />} />
+                        <Route path="/profile" element={<Profile />} />
+                        <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
                 </Suspense>
-            </main>
 
-            <nav className="bottom-nav" style={{ padding: '0 0.5rem 1.5rem 0.5rem' }}>
-                <NavLink to="/" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <LayoutDashboard size={22} />
-                    <span style={{ fontSize: '0.65rem' }}>Inicio</span>
-                </NavLink>
-                <NavLink to="/history" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <List size={22} />
-                    <span style={{ fontSize: '0.65rem' }}>Historial</span>
-                </NavLink>
-                <NavLink to="/categories" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <PieChart size={22} />
-                    <span style={{ fontSize: '0.65rem' }}>Mini $</span>
-                </NavLink>
+                {showNav && (
+                    <nav className="bottom-nav animate-fade-in">
+                        <NavLink to="/" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} end>
+                            <Home size={22} />
+                            <span>INICIO</span>
+                        </NavLink>
+                        <NavLink to="/history" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                            <HistoryIcon size={22} />
+                            <span>HISTORIAL</span>
+                        </NavLink>
+                        
+                        <div className="fab-container">
+                            <NavLink to="/add" className="fab-button">
+                                <Plus size={32} />
+                            </NavLink>
+                        </div>
 
-                <div className="fab-container">
-                    <NavLink to="/add" className="fab-button" style={{ width: '55px', height: '55px', borderRadius: '18px' }}>
-                        <Plus size={28} />
-                    </NavLink>
-                </div>
-
-                <NavLink to="/metas" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <Target size={22} />
-                    <span style={{ fontSize: '0.65rem' }}>Metas</span>
-                </NavLink>
-                <NavLink to="/scheduled" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <CalendarCheck size={22} />
-                    <span style={{ fontSize: '0.65rem' }}>Pagos</span>
-                </NavLink>
-                <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <Settings size={22} />
-                    <span style={{ fontSize: '0.65rem' }}>Ajustes</span>
-                </NavLink>
-            </nav>
+                        <NavLink to="/categories" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                            <LayoutGrid size={22} />
+                            <span>SOBRES</span>
+                        </NavLink>
+                        <NavLink to="/profile" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                            <Settings size={22} />
+                            <span>AJUSTES</span>
+                        </NavLink>
+                    </nav>
+                )}
+            </div>
         </div>
     );
 };
 
 const App: React.FC = () => {
     return (
-        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+        <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}>
             <AppProvider>
-                <Router>
-                    <AppContent />
-                </Router>
+                <AppContent />
             </AppProvider>
         </GoogleOAuthProvider>
     );

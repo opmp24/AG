@@ -1,0 +1,17 @@
+﻿commit 7ca1a34e94f738771afa4f8e9a05f04cc3012f09
+Author: Oko <oko@example.com>
+Date:   Mon Mar 9 17:42:17 2026 -0300
+
+    feat: Add new favicon and PWA icons, and update theme color.
+
+commit 0478bfb17cb36cd451674d5f703b2e05660b9c2f
+Author: Oko <oko@example.com>
+Date:   Mon Mar 9 16:32:47 2026 -0300
+
+    feat: Add initial application pages including Dashboard, Profile (with authentication, preferences, and bulk import), and Goals.
+
+commit 01dcf0a1a432d88eb8a705d3c40bc24f4837c4c8
+Author: Oko <oko@example.com>
+Date:   Mon Mar 9 16:19:00 2026 -0300
+
+    feat: add AppContext for global state management and Profile page for user settings, authentication, and data import.
