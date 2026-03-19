@@ -50,9 +50,11 @@ const Scheduled: React.FC = () => {
             id: editingItem?.id || uuidv4(),
             description,
             amount: Number(amount),
+            currency: preferences.currency, // Ya no falta
             categoryId,
             dueDate: new Date(dueDate).getTime(),
             paymentMethod,
+            status: 'pending', // Añadido
             updatedAt: Date.now(),
             createdAt: editingItem?.createdAt || Date.now()
         };

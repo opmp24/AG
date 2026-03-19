@@ -92,7 +92,7 @@ export function parseBankNotification(text: string): DetectedPayment | null {
     return result as DetectedPayment;
 }
 
-export function parseBulkBankMovements(text: string): DetectedPayment[] {
+export function parseBulkMovements(text: string): DetectedPayment[] {
     if (!text) return [];
     const lines = text.split(/\r?\n/).filter(line => line.trim().length > 8);
     const results: DetectedPayment[] = [];

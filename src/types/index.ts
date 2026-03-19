@@ -155,6 +155,7 @@ export interface ScheduledExpense {
     paymentMethod: 'efectivo' | 'tarjeta' | 'transferencia';
     status: 'pending' | 'paid';
     createdAt: number;
+    updatedAt?: number;
 }
 
 /** Application state for context */

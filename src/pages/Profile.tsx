@@ -32,7 +32,7 @@ const Profile: React.FC = () => {
         try {
             const expenses = parseBulkMovements(pastedText);
             let total = 0;
-            const links = expenses.map(e => ({ description: e.description, amount: e.amount }));
+            const links = expenses.map((e: any) => ({ description: e.merchant || e.description, amount: e.amount }));
             for (const exp of expenses) {
                 total += exp.amount;
             }
@@ -162,7 +162,7 @@ const Profile: React.FC = () => {
                         <select
                             className="form-input"
                             value={preferences.currency}
-                            onChange={(e) => updatePreferences({ currency: e.target.value })}
+                            onChange={(e) => updatePreferences({ currency: e.target.value as any })}
                         >
                             {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
                         </select>

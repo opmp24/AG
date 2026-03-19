@@ -84,7 +84,7 @@ export async function deleteExpense(id: string): Promise<void> {
     await db.delete('expenses', id);
 }
 
-export async function getExpenseById(id: string): Promise<Expense | null> {
+export async function getExpense(id: string): Promise<Expense | null> {
     const db = await dbPromise;
     const item = await db.get('expenses', id);
     if (!item) return null;
@@ -156,21 +156,49 @@ export async function deleteSavingGoal(id: string): Promise<void> {
 }
 
 // --- Backup & Export ---
-export async function exportAllData() {
+export async function exportData() {
     const db = await dbPromise;
     const expenses = await getAllExpenses();
     const categories = await db.getAll('categories');
     const scheduled = await db.getAll('scheduled');
     const goals = await db.getAll('saving_goals');
 
-    return {
+    return JSON.stringify({
         version: DB_VERSION,
         expenses,
         categories,
         scheduled,
         goals,
         exportedAt: Date.now()
-    };
+    }, null, 2);
+}
+
+export async function importData(jsonString: string): Promise<boolean> {
+    try {
+        const data = JSON.parse(jsonString);
+        if (!data.expenses || !data.categories) return false;
+
+        for (const exp of data.expenses) await saveExpense(exp);
+        for (const cat of data.categories) await saveCategory(cat);
+        if (data.scheduled) {
+            for (const item of data.scheduled) await saveScheduledExpense(item);
+        }
+        if (data.goals) {
+            for (const goal of data.goals) await saveSavingGoal(goal);
+        }
+        return true;
+    } catch (e) {
+        console.error("Error al importar datos:", e);
+        return false;
+    }
+}
+
+export async function clearAllData(): Promise<void> {
+    const db = await dbPromise;
+    const stores: (keyof HogarSafeDB)[] = ['expenses', 'categories', 'scheduled', 'saving_goals', 'budgets'];
+    for (const store of stores) {
+        await db.clear(store);
+    }
 }
 
 export async function exportToCSV() {
