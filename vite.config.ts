@@ -4,10 +4,12 @@ import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
 export default defineConfig({
+    base: '/AG/',
     plugins: [
         react(),
         VitePWA({
             registerType: 'autoUpdate',
+            injectRegister: 'auto',
             includeAssets: ['favicon.svg', 'icons/*.png'],
             manifest: {
                 name: 'Gastop - Control de Gastos',
@@ -17,8 +19,8 @@ export default defineConfig({
                 background_color: '#0f0f23',
                 display: 'standalone',
                 orientation: 'portrait-primary',
-                scope: '/',
-                start_url: '/',
+                scope: '/AG/',
+                start_url: '/AG/',
                 lang: 'es',
                 categories: ['finance', 'utilities'],
                 icons: [
